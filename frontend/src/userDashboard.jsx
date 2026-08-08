@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // ==========================================
 // 1. REUSABLE POST COMPONENT
 // ==========================================
 const Post = ({ author, group, time, content, initialVotes, tags }) => {
   const [votes, setVotes] = useState(initialVotes);
-  const [voteStatus, setVoteStatus] = useState(null); // 'up', 'down', or null
+  const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
@@ -31,7 +32,6 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
 
   return (
     <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-6">
-      {/* Post Header */}
       <div className="flex justify-between items-start mb-5">
         <div className="flex items-center space-x-3.5">
           <div className="w-11 h-11 rounded-2xl bg-[#D1BCFA] text-[#3B3633] flex items-center justify-center font-extrabold text-lg shadow-inner">
@@ -51,7 +51,6 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
           </div>
         </div>
         
-        {/* Post Options (Report/Hide) */}
         <div className="relative">
           <button 
             onClick={() => setShowOptions(!showOptions)}
@@ -69,7 +68,6 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
         </div>
       </div>
 
-      {/* Post Body */}
       <div className="mb-5">
         <p className="text-[#3B3633]/80 text-sm leading-relaxed whitespace-pre-wrap font-bold">{content}</p>
         {tags && (
@@ -83,7 +81,6 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
         )}
       </div>
 
-      {/* Post Footer / Actions */}
       <div className="flex items-center justify-between border-t border-[#EBDDD0] pt-4">
         <div className="flex items-center space-x-1 bg-[#EBDDD0]/30 rounded-2xl border border-[#EBDDD0] p-1.5">
           <button 
@@ -127,7 +124,6 @@ export default function UserDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [postText, setPostText] = useState('');
 
-  // Mock Feed Data
   const feedPosts = [
     {
       id: 1,
@@ -160,8 +156,6 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
-      
-      {/* Top Navigation Bar */}
       <nav className="sticky top-0 z-40 bg-[#FAF7F2] border-b border-[#EBDDD0] px-6 h-20 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
           <button 
@@ -181,13 +175,12 @@ export default function UserDashboard() {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#F4B7CC] rounded-full border-2 border-[#FAF7F2]"></span>
           </button>
-          <div className="w-10 h-10 rounded-xl bg-[#B3CFF3] shadow-sm flex items-center justify-center text-[#3B3633] font-extrabold text-sm cursor-pointer border border-white/50">
+          <Link to="/profile" className="w-10 h-10 rounded-xl bg-[#B3CFF3] shadow-sm flex items-center justify-center text-[#3B3633] font-extrabold text-sm cursor-pointer border border-white/50">
             ME
-          </div>
+          </Link>
         </div>
       </nav>
 
-      {/* Sliding Sidebar Menu */}
       {isMenuOpen && (
         <div 
           className="fixed inset-0 bg-[#3B3633]/10 z-40 backdrop-blur-sm transition-opacity" 
@@ -202,25 +195,22 @@ export default function UserDashboard() {
           </button>
         </div>
         <div className="p-4 flex-1 overflow-y-auto space-y-1.5">
-          <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl bg-[#EBDDD0]/50 text-[#3B3633] font-extrabold">
+          <Link to="/dashboard" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl bg-[#EBDDD0]/50 text-[#3B3633] font-extrabold">
             <span className="text-xl">🏠</span> <span>Home Feed</span>
-          </a>
-          <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+          </Link>
+          <Link to="/groups" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">🤝</span> <span>My Groups</span>
-          </a>
+          </Link>
           <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
           </a>
-          <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+          <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">👤</span> <span>Profile</span>
-          </a>
+          </Link>
         </div>
       </div>
 
-      {/* Main Content Area */}
       <main className="max-w-2xl mx-auto pt-8 px-4 pb-20">
-        
-        {/* Create Post Section */}
         <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8">
           <div className="flex space-x-4">
             <div className="w-11 h-11 rounded-2xl bg-[#F6DEBA] flex-shrink-0 flex items-center justify-center text-[#3B3633] font-extrabold shadow-inner">
@@ -253,7 +243,6 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* Feed Section */}
         <div>
           <h2 className="text-[11px] font-extrabold text-[#3B3633]/50 mb-5 uppercase tracking-widest pl-2">Your Feed</h2>
           {feedPosts.map((post) => (
@@ -268,7 +257,6 @@ export default function UserDashboard() {
             />
           ))}
         </div>
-        
       </main>
     </div>
   );
