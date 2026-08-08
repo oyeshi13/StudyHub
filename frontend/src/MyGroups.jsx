@@ -81,18 +81,18 @@ export default function MyGroups() {
           </button>
         </div>
         <div className="p-4 flex-1 overflow-y-auto space-y-1.5">
-          <Link to="/dashboard" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
-            <span className="text-xl">🏠</span> <span>Home Feed</span>
-          </Link>
-          <Link to="/groups" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl bg-[#EBDDD0]/50 text-[#3B3633] font-extrabold">
-            <span className="text-xl">🤝</span> <span>My Groups</span>
-          </Link>
-          <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
-            <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
-          </a>
-          <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
-            <span className="text-xl">👤</span> <span>Profile</span>
-          </Link>
+            <Link to="/dashboard" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+                <span className="text-xl">🏠</span> <span>Home Feed</span>
+            </Link>
+            <Link to="/groups" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl bg-[#EBDDD0]/50 text-[#3B3633] font-extrabold">
+                <span className="text-xl">🤝</span> <span>My Groups</span>
+            </Link>
+            <Link to="/doubts" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+                <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
+            </Link>
+            <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+                <span className="text-xl">👤</span> <span>Profile</span>
+            </Link>
         </div>
       </div>
 
@@ -106,8 +106,8 @@ export default function MyGroups() {
             <p className="text-[#3B3633]/60 font-bold mt-2 text-sm max-w-sm">Connect with students from your departments and discuss your courses.</p>
           </div>
           <div className="mt-6 md:mt-0">
-            <button className="w-full md:w-auto bg-[#262423] hover:bg-black text-[#FAF7F2] font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5">
-              + Explore Departments
+            <button onClick={() => navigate('/explore-departments')} className="w-full md:w-auto bg-[#262423] hover:bg-black text-[#FAF7F2] font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5">
+                + Explore Departments
             </button>
           </div>
         </div>

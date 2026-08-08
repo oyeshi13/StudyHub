@@ -201,9 +201,9 @@ export default function UserDashboard() {
           <Link to="/groups" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">🤝</span> <span>My Groups</span>
           </Link>
-          <a href="#" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+          <Link to="/doubts" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
-          </a>
+          </Link>
           <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">👤</span> <span>Profile</span>
           </Link>
@@ -211,7 +211,7 @@ export default function UserDashboard() {
       </div>
 
       <main className="max-w-2xl mx-auto pt-8 px-4 pb-20">
-        <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8">
+        {/* <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8">
           <div className="flex space-x-4">
             <div className="w-11 h-11 rounded-2xl bg-[#F6DEBA] flex-shrink-0 flex items-center justify-center text-[#3B3633] font-extrabold shadow-inner">
               ME
@@ -241,7 +241,7 @@ export default function UserDashboard() {
               Post
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div>
           <h2 className="text-[11px] font-extrabold text-[#3B3633]/50 mb-5 uppercase tracking-widest pl-2">Your Feed</h2>

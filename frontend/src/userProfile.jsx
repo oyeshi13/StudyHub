@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -33,7 +34,14 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 font-sans text-[#3B3633]">
+    <div className="max-w-3xl mx-auto p-6 pt-8 font-sans text-[#3B3633]">
+      
+      {/* Back to Home Navigation */}
+      <Link to="/dashboard" className="inline-flex items-center space-x-2 text-[#3B3633]/60 hover:text-[#3B3633] font-extrabold text-sm mb-6 transition-colors">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        <span>Back to Home</span>
+      </Link>
+
       <div className="bg-[#FAF7F2] rounded-[2.5rem] shadow-sm border border-[#EBDDD0] overflow-hidden">
         
         {/* Profile Header Background - Pastel Gradient */}
