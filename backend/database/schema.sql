@@ -1,3 +1,4 @@
+--Oyeshi--
 CREATE TABLE DEPARTMENTS(
 dept_code INTEGER PRIMARY KEY,
 dept_name VARCHAR(50)
