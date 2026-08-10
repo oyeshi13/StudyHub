@@ -1,0 +1,64 @@
+CREATE TABLE DEPARTMENTS(
+dept_code INTEGER PRIMARY KEY,
+dept_name VARCHAR(50)
+)
+
+
+INSERT INTO DEPARTMENTS(dept_code,dept_name) VALUES(05,'CSE');
+INSERT INTO DEPARTMENTS(dept_code,dept_name) VALUES(06,'EEE');
+INSERT INTO DEPARTMENTS(dept_code,dept_name) VALUES(01,'ARCHITECHTURE')
+
+CREATE TABLE DEPT_GROUPS(
+group_id INTEGER PRIMARY KEY,
+dept_code INTEGER UNIQUE REFERENCES DEPARTMENTS(dept_code),
+group_name VARCHAR(50)
+)
+
+CREATE TABLE COURSES(
+course_code CHAR(7) PRIMARY KEY,
+course_title VARCHAR(50),
+dept_code INTEGER REFERENCES DEPARTMENTS(dept_code)
+)
+
+
+
+CREATE TABLE DOUBTS(
+doubt_id INTEGER PRIMARY KEY,
+title VARCHAR(100),
+description VARCHAR(500),
+course_code CHAR(7) REFERENCES COURSES(course_code),
+author INTEGER REFERENCES STUDENTS(student_id),
+posted_at TIMESTAMP,
+solved BOOL
+)
+
+
+CREATE TABLE TAGS(
+tag_id INTEGER PRIMARY KEY,
+tag_title VARCHAR(20) UNIQUE
+)
+
+
+CREATE TABLE DOUBT_TAGS(
+doubt_id INTEGER REFERENCES DOUBTS(doubt_id),
+tag_id INTEGER REFERENCES TAGS(tag_id),
+
+PRIMARY KEY (doubt_id, tag_id)
+)
+
+
+CREATE TABLE RESOURCE_COMMENTS(
+comment_id INTEGER PRIMARY KEY,
+comment_text VARCHAR(400),
+resource_id INTEGER REFERENCES RESOURCES(resource_id),
+author INTEGER REFERENCES STUDENTS(student_id),
+commented_at TIMESTAMP
+)
+
+CREATE TABLE ANSWERS(
+answer_id INTEGER PRIMARY KEY,
+doubt_id INTEGER REFERENCES DOUBTS(doubt_id),
+answer_text VARCHAR(400),
+author INTEGER REFERENCES STUDENTS(student_id),
+answered_at TIMESTAMP
+)
