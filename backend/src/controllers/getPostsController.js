@@ -4,6 +4,7 @@ const getPostsController = (async (req,res)=>{
     try{
 
         const {departmentId} = req.params
+        console.log(departmentId)
         const result = await pool.query(
             `SELECT *
             FROM RESOURCES

@@ -7,6 +7,7 @@ import cors from "cors"
 import getPosts from "./routes/postsRouter.js"
 import getDept from "./routes/getDeptRouter.js"
 import getCourses from "./routes/coursesRoute.js"
+import joinGroupRoute from "./routes/joinRouter.js"
 
 dotenv.config()
 
@@ -27,11 +28,13 @@ app.use("/explore-departments",departmentRouter)
 
 app.use("/groups",groupRouter)
 
-app.use("/groups",getPosts)
+app.use("/groups/posts",getPosts)
 
 app.use("/dept",getDept)
 
 app.use("/groups/courses",getCourses)
+
+app.use("/join",joinGroupRoute)
 
 
 
