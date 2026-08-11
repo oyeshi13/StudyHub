@@ -1,46 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function MyGroups() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [joinedDepartments,setJoinedDepartments] = useState([])
+  const [loading,setLoading] = useState(false)
   const navigate = useNavigate();
 
   // Mock Data for joined departments
-  const joinedDepartments = [
-    {
-      id: "cse",
-      code: "CSE",
-      name: "Computer Science & Engineering",
-      members: 128,
-      courses: 24,
-      newPosts: 12,
-      icon: "💻",
-      theme: "bg-[#B3CFF3]",
-      description: "Discuss courses, assignments, exams, projects, resources, and academic questions with fellow CSE students."
-    },
-    {
-      id: "eee",
-      code: "EEE",
-      name: "Electrical & Electronic Engineering",
-      members: 94,
-      courses: 20,
-      newPosts: 7,
-      icon: "⚡",
-      theme: "bg-[#F6DEBA]",
-      description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers."
-    },
-    {
-      id: "bme",
-      code: "BME",
-      name: "Biomedical Engineering",
-      members: 76,
-      courses: 18,
-      newPosts: 4,
-      icon: "🧬",
-      theme: "bg-[#D1BCFA]",
-      description: "Connect over medical imaging, biomaterials, and biology resources."
-    }
-  ];
+  // const joinedDepartments = [
+  //   {
+  //     id: "cse",
+  //     code: "CSE",
+  //     name: "Computer Science & Engineering",
+  //     members: 128,
+  //     courses: 24,
+  //     newPosts: 12,
+  //     icon: "💻",
+  //     theme: "bg-[#B3CFF3]",
+  //     description: "Discuss courses, assignments, exams, projects, resources, and academic questions with fellow CSE students."
+  //   },
+  //   {
+  //     id: "eee",
+  //     code: "EEE",
+  //     name: "Electrical & Electronic Engineering",
+  //     members: 94,
+  //     courses: 20,
+  //     newPosts: 7,
+  //     icon: "⚡",
+  //     theme: "bg-[#F6DEBA]",
+  //     description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers."
+  //   },
+  //   {
+  //     id: "bme",
+  //     code: "BME",
+  //     name: "Biomedical Engineering",
+  //     members: 76,
+  //     courses: 18,
+  //     newPosts: 4,
+  //     icon: "🧬",
+  //     theme: "bg-[#D1BCFA]",
+  //     description: "Connect over medical imaging, biomaterials, and biology resources."
+  //   }
+  // ];
+  useEffect(() => {
+  const fetchJoinedDepartments = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch("http://localhost:5000/groups")
+          const data = await response.json()
+          setJoinedDepartments(data);
+        } catch (error) {
+          console.error("Failed to fetch departments", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchJoinedDepartments();
+    }, [])
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
@@ -115,7 +132,7 @@ export default function MyGroups() {
         {/* Department Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
           {joinedDepartments.map((dept) => (
-            <div key={dept.id} className="bg-[#FAF7F2] rounded-[2.5rem] shadow-sm border border-[#EBDDD0] p-8 hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between">
+            <div key={dept.dept_code} className="bg-[#FAF7F2] rounded-[2.5rem] shadow-sm border border-[#EBDDD0] p-8 hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <div className={`w-14 h-14 ${dept.theme} text-[#3B3633] rounded-2xl flex items-center justify-center text-2xl shadow-inner`}>
