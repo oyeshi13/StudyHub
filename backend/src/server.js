@@ -2,6 +2,7 @@ import express from "express"
 import dotenv from "dotenv"
 import pool from "./config/db.js"
 import departmentRouter from "./routes/departmentRoutes.js"
+import groupRouter from "./routes/groupRoutes.js"
 import cors from "cors"
 
 dotenv.config()
@@ -20,6 +21,8 @@ app.get("/",(req,res)=>{
 })
 
 app.use("/explore-departments",departmentRouter)
+
+app.use("/groups",groupRouter)
 
 app.listen(PORT,()=>{
     console.log(`Server running on http://localhost:${PORT}`)
