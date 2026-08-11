@@ -18,7 +18,8 @@ export default function ExploreDepartments() {
     const fetchDepartments = async () => {
       setLoading(true);
       try {
-        const data = await departmentService.getDepartments();
+        const response = await fetch("http://localhost:5000/explore-departments")
+        const data = await response.json()
         setDepartments(data);
       } catch (error) {
         console.error("Failed to fetch departments", error);
@@ -45,10 +46,8 @@ export default function ExploreDepartments() {
 
   // Filter based on Search
   const filteredDepartments = departments.filter(dept => 
-    dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    dept.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    dept.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    (dept.dept_name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (dept.dept_code == searchQuery));
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
@@ -135,12 +134,12 @@ export default function ExploreDepartments() {
                       </span>
                     </div>
                     
-                    <h3 className="text-2xl font-extrabold text-[#3B3633] tracking-tight">{dept.code}</h3>
-                    <h4 className="text-sm font-extrabold text-[#3B3633]/60 mb-4">{dept.name}</h4>
+                    <h3 className="text-2xl font-extrabold text-[#3B3633] tracking-tight">{dept.dept_code}</h3>
+                    <h4 className="text-sm font-extrabold text-[#3B3633]/60 mb-4">{dept.dept_name}</h4>
                     
-                    <p className="text-[#3B3633]/80 text-sm leading-relaxed font-bold mb-6 line-clamp-3">
+                    {/* <p className="text-[#3B3633]/80 text-sm leading-relaxed font-bold mb-6 line-clamp-3">
                       {dept.description}
-                    </p>
+                    </p> */}
 
                     <div className="flex space-x-4 mb-8">
                       <div className="flex flex-col">
