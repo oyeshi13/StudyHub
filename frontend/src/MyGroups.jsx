@@ -164,7 +164,7 @@ export default function MyGroups() {
               </div>
 
               <button 
-                onClick={() => navigate(`/groups/${dept.id}`)}
+                onClick={() => navigate(`/groups/${dept.dept_code}`)}
                 className="w-full bg-[#EBDDD0]/50 hover:bg-[#EBDDD0] text-[#3B3633] font-extrabold py-3.5 rounded-xl transition-colors text-sm text-center border border-white/30"
               >
                 Open Group

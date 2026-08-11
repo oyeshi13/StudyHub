@@ -107,58 +107,114 @@ export default function GroupPage() {
   const [newPostData, setNewPostData] = useState({ course: '', title: '', content: '', tags: '' });
 
   // MOCK DATA (Can be replaced with backend later)
-  const departmentsData = {
-    cse: {
-      id: "cse",
-      code: "CSE",
-      name: "Computer Science & Engineering",
-      members: 128,
-      theme: "bg-[#B3CFF3]",
-      icon: "💻",
-      description: "Discuss courses, assignments, exams, projects, resources and academic questions with fellow CSE students.",
-      courses: ["CSE 110", "CSE 111", "CSE 120", "CSE 121", "CSE 220", "CSE 221", "CSE 230"],
-      initialPosts: [
-        {
-          id: 1, title: "Can someone explain Dijkstra's algorithm?", course: "CSE 220", author: "Fabiha Ishrah",
-          tags: ["Dijkstra", "Graphs", "Help"], content: "I'm having trouble understanding how the priority queue works in Dijkstra's. Can someone break it down?",
-          initialVotes: 42, commentsCount: 8, createdAt: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-          id: 2, title: "Important topics for the upcoming DSA exam", course: "CSE 220", author: "Alex Chen",
-          tags: ["ExamPrep", "DSA"], content: "Does anyone have a list of topics we should prioritize for tomorrow's exam? Are trees included?",
-          initialVotes: 67, commentsCount: 15, createdAt: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-          id: 3, title: "How does database normalization actually work?", course: "CSE 230", author: "Sarah Jenkins",
-          tags: ["DBMS", "Normalization"], content: "Specifically struggling with BCNF vs 3NF. Any good resources or simple explanations?",
-          initialVotes: 31, commentsCount: 6, createdAt: new Date(Date.now() - 172800000).toISOString()
-        },
-        {
-          id: 4, title: "Need help with recursion and dynamic programming", course: "CSE 120", author: "Rahim Hasan",
-          tags: ["DP", "Recursion", "Help"], content: "I just can't wrap my head around identifying the base cases correctly.",
-          initialVotes: 19, commentsCount: 4, createdAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 5, title: "Best resources for graph algorithms?", course: "CSE 221", author: "Nadia Islam",
-          tags: ["Graphs", "Resources"], content: "Looking for visualizers or good YouTube series that cover spanning trees and network flow.",
-          initialVotes: 54, commentsCount: 11, createdAt: new Date(Date.now() - 259200000).toISOString()
-        }
-      ]
-    },
-    eee: {
-        id: "eee", code: "EEE", name: "Electrical & Electronic Engineering", members: 94, theme: "bg-[#F6DEBA]", icon: "⚡",
-        description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers.",
-        courses: ["EEE 101", "EEE 105", "EEE 201"], initialPosts: []
-    },
-    bme: {
-        id: "bme", code: "BME", name: "Biomedical Engineering", members: 76, theme: "bg-[#D1BCFA]", icon: "🧬",
-        description: "Connect over medical imaging, biomaterials, and biology resources.",
-        courses: ["BME 201", "BME 205", "BME 301"], initialPosts: []
-    }
-  };
+  // const departmentsData = {
+  //   cse: {
+  //     id: "cse",
+  //     code: "CSE",
+  //     name: "Computer Science & Engineering",
+  //     members: 128,
+  //     theme: "bg-[#B3CFF3]",
+  //     icon: "💻",
+  //     description: "Discuss courses, assignments, exams, projects, resources and academic questions with fellow CSE students.",
+  //     courses: ["CSE 110", "CSE 111", "CSE 120", "CSE 121", "CSE 220", "CSE 221", "CSE 230"],
+  //     initialPosts: [
+  //       {
+  //         id: 1, title: "Can someone explain Dijkstra's algorithm?", course: "CSE 220", author: "Fabiha Ishrah",
+  //         tags: ["Dijkstra", "Graphs", "Help"], content: "I'm having trouble understanding how the priority queue works in Dijkstra's. Can someone break it down?",
+  //         initialVotes: 42, commentsCount: 8, createdAt: new Date(Date.now() - 7200000).toISOString()
+  //       },
+  //       {
+  //         id: 2, title: "Important topics for the upcoming DSA exam", course: "CSE 220", author: "Alex Chen",
+  //         tags: ["ExamPrep", "DSA"], content: "Does anyone have a list of topics we should prioritize for tomorrow's exam? Are trees included?",
+  //         initialVotes: 67, commentsCount: 15, createdAt: new Date(Date.now() - 86400000).toISOString()
+  //       },
+  //       {
+  //         id: 3, title: "How does database normalization actually work?", course: "CSE 230", author: "Sarah Jenkins",
+  //         tags: ["DBMS", "Normalization"], content: "Specifically struggling with BCNF vs 3NF. Any good resources or simple explanations?",
+  //         initialVotes: 31, commentsCount: 6, createdAt: new Date(Date.now() - 172800000).toISOString()
+  //       },
+  //       {
+  //         id: 4, title: "Need help with recursion and dynamic programming", course: "CSE 120", author: "Rahim Hasan",
+  //         tags: ["DP", "Recursion", "Help"], content: "I just can't wrap my head around identifying the base cases correctly.",
+  //         initialVotes: 19, commentsCount: 4, createdAt: new Date(Date.now() - 3600000).toISOString()
+  //       },
+  //       {
+  //         id: 5, title: "Best resources for graph algorithms?", course: "CSE 221", author: "Nadia Islam",
+  //         tags: ["Graphs", "Resources"], content: "Looking for visualizers or good YouTube series that cover spanning trees and network flow.",
+  //         initialVotes: 54, commentsCount: 11, createdAt: new Date(Date.now() - 259200000).toISOString()
+  //       }
+  //     ]
+  //   },
+  //   eee: {
+  //       id: "eee", code: "EEE", name: "Electrical & Electronic Engineering", members: 94, theme: "bg-[#F6DEBA]", icon: "⚡",
+  //       description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers.",
+  //       courses: ["EEE 101", "EEE 105", "EEE 201"], initialPosts: []
+  //   },
+  //   bme: {
+  //       id: "bme", code: "BME", name: "Biomedical Engineering", members: 76, theme: "bg-[#D1BCFA]", icon: "🧬",
+  //       description: "Connect over medical imaging, biomaterials, and biology resources.",
+  //       courses: ["BME 201", "BME 205", "BME 301"], initialPosts: []
+  //   }
+  // };
 
-  const department = departmentsData[departmentId];
-  const [posts, setPosts] = useState(department ? department.initialPosts : []);
+  
+  const [department,setDepartment] = useState(null);
+  const [loading,setLoading] = useState(false)
+  //const {departmentId} = useParams()
+
+  useEffect(() => {
+      const fetchDept = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(`http://localhost:5000/dept/${departmentId}`)
+          const data = await response.json()
+          setDepartment(data[0]);
+        } catch (error) {
+          console.log("Failed to fetch departments", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDept();
+    }, [departmentId]);
+
+
+  const [posts, setPosts] = useState([]);
+  useEffect(() => {
+      const fetchPosts = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(`http://localhost:5000/groups/${departmentId}`)
+          const data = await response.json()
+          setPosts(data);
+        } catch (error) {
+          console.error("Failed to fetch departments", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPosts();
+    }, [departmentId]);
+
+
+    const [courses,setCourses] = useState([])
+
+    useEffect(() => {
+        const fetchCourses = async () => {
+          setLoading(true);
+          try {
+            const response = await fetch(`http://localhost:5000/groups/courses/${departmentId}`)
+            const data = await response.json()
+            setCourses(data);
+          } catch (error) {
+            console.log("Failed to fetch departments", error);
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchCourses();
+      }, [departmentId]);
+  
 
   if (!department) {
     return <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center font-extrabold text-[#3B3633] text-2xl">Department Not Found</div>;
@@ -259,7 +315,7 @@ export default function GroupPage() {
             <span>Back to Groups</span>
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between">
+          {/* <div className="flex flex-col md:flex-row md:items-end justify-between">
             <div className="flex items-center space-x-5">
               <div className={`w-20 h-20 ${department.theme} text-[#3B3633] rounded-3xl flex items-center justify-center text-4xl shadow-inner`}>
                 {department.icon}
@@ -277,8 +333,8 @@ export default function GroupPage() {
                 {department.members} members • {department.courses.length} courses
               </div>
             </div>
-          </div>
-          <p className="mt-6 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">{department.description}</p>
+          </div> */}
+          <p className="mt-6 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">Welcome to {department.dept_name}</p>
         </div>
 
         {/* FEED CONTROLS & NEW POST BUTTON */}
@@ -292,8 +348,8 @@ export default function GroupPage() {
               className="bg-[#FAF7F2] border border-[#EBDDD0] text-[#3B3633] text-sm font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50 shadow-sm appearance-none cursor-pointer"
             >
               <option value="All Courses">All Courses</option>
-              {department.courses.map(course => (
-                <option key={course} value={course}>{course}</option>
+              {courses.map(course => (
+                <option key={course.course} value={course.course}>{course.course}</option>
               ))}
             </select>
 
@@ -343,9 +399,9 @@ export default function GroupPage() {
                   onChange={(e) => setNewPostData({...newPostData, course: e.target.value})}
                   className="w-full bg-[#EBDDD0]/40 border-none rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-4 focus:ring-[#D1BCFA]/50 focus:bg-white transition-all text-sm font-bold text-[#3B3633]"
                 >
-                  <option value="" disabled>Choose a {department.code} course...</option>
-                  {department.courses.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                  <option value="" disabled>Choose a {department.dept_name} course...</option>
+                  {courses.map(c => (
+                    <option key={c.course} value={c.course}>{c.course}</option>
                   ))}
                 </select>
               </div>
@@ -412,7 +468,7 @@ export default function GroupPage() {
         {/* FEED LOOP */}
         <div>
           {displayPosts.length > 0 ? displayPosts.map((post) => (
-            <div key={post.id} className="animate-fade-in-up">
+            <div key={post.dept_code} className="animate-fade-in-up">
               <CoursePost 
                 author={post.author}
                 course={post.course}
