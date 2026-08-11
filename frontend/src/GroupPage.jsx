@@ -184,7 +184,7 @@ export default function GroupPage() {
       const fetchPosts = async () => {
         setLoading(true);
         try {
-          const response = await fetch(`http://localhost:5000/groups/${departmentId}`)
+          const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`)
           const data = await response.json()
           setPosts(data);
         } catch (error) {

@@ -35,8 +35,12 @@ export default function ExploreDepartments() {
     
     setIsJoining(prev => ({ ...prev, [departmentId]: true }));
     try {
-      await departmentService.joinDepartment(departmentId);
-      setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }));
+      // await departmentService.joinDepartment(departmentId);
+      // setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }));
+      await fetch(`http://localhost:5000/join/${departmentId}`,{
+        "method" : "POST"
+      })
+      setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }))
     } catch (error) {
       alert("Failed to join department. Please try again.");
     } finally {
@@ -119,11 +123,11 @@ export default function ExploreDepartments() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
             {filteredDepartments.map((dept) => {
-              const hasJoined = joinedDepartments[dept.id];
-              const joining = isJoining[dept.id];
+              const hasJoined = joinedDepartments[dept.dept_code];
+              const joining = isJoining[dept.dept_code];
 
               return (
-                <div key={dept.id} className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-7 hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between">
+                <div key={dept.dept_code} className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-7 hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-5">
                       <div className={`w-14 h-14 ${dept.theme} text-[#3B3633] rounded-2xl flex items-center justify-center text-2xl shadow-inner`}>
@@ -161,7 +165,7 @@ export default function ExploreDepartments() {
                         <span className="text-[#B3CFF3] mr-2 text-lg leading-none">✓</span> Joined
                       </div>
                       <button 
-                        onClick={() => navigate(`/groups/${dept.id}`)}
+                        onClick={() => navigate(`/groups/${dept.dept_code}`)}
                         className="flex-1 bg-[#262423] hover:bg-black text-[#FAF7F2] font-extrabold py-3.5 rounded-xl transition-colors text-sm shadow-md text-center"
                       >
                         Open Group →
@@ -169,7 +173,7 @@ export default function ExploreDepartments() {
                     </div>
                   ) : (
                     <button 
-                      onClick={() => handleJoin(dept.id)}
+                      onClick={() => handleJoin(dept.dept_code)}
                       disabled={joining}
                       className="w-full bg-[#EBDDD0]/50 hover:bg-[#EBDDD0] text-[#3B3633] font-extrabold py-3.5 rounded-xl transition-colors text-sm text-center border border-white/30"
                     >
