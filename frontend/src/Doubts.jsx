@@ -22,16 +22,36 @@ export default function Doubts() {
 
   // Fetch Data on Load or Filter Change
   useEffect(() => {
-    const loadData = async () => {
+    const loadCourses = async () => {
       try {
         setLoading(true);
-        const [fetchedCourses, fetchedDoubts] = await Promise.all([
-          doubtService.getCourses(),
-          doubtService.getDoubts({ search: searchQuery, courseId: selectedCourseId, sort: sortBy })
-        ]);
+        //const [fetchedCourses, fetchedDoubts]
+        const response = await fetch(`http://localhost:5000/doubts/courses`)
+        const fetchedCourses = await response.json();
+        console.log(fetchedCourses)
         setCourses(fetchedCourses);
-        setDoubts(fetchedDoubts);
         setError(null);
+      } catch (err) {
+        setError("Failed to load courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Adding slight debounce for search
+    const timer = setTimeout(() => loadCourses(), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCourseId, sortBy]);
+
+
+  useEffect(() => {
+    const loadDoubts = async () => {
+      try {
+        setLoading(true);
+        const response =  await fetch(`http://localhost:5000/doubts/courses/getDoubts`)
+        const fetchedDoubts = await response.json();
+        setDoubts(fetchedDoubts);
+        setError(null)
       } catch (err) {
         setError("Failed to load doubts. Please try again.");
       } finally {
@@ -40,7 +60,7 @@ export default function Doubts() {
     };
     
     // Adding slight debounce for search
-    const timer = setTimeout(() => loadData(), 300);
+    const timer = setTimeout(() => loadDoubts(), 300);
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCourseId, sortBy]);
 
@@ -131,7 +151,7 @@ export default function Doubts() {
                 <label className="block text-xs font-extrabold text-[#3B3633]/60 uppercase tracking-wider mb-2">Course <span className="text-[#F4B7CC]">*</span></label>
                 <select required value={formData.courseId} onChange={e => setFormData({...formData, courseId: e.target.value})} className="w-full bg-[#EBDDD0]/40 border-none rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-4 focus:ring-[#D1BCFA]/50 text-sm font-bold text-[#3B3633] cursor-pointer">
                   <option value="" disabled>Select Course</option>
-                  {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
+                  {courses.map(c => <option key={c.course_code} value={c.course_code}>{c.course_title} — {c.course_code}</option>)}
                 </select>
               </div>
               <div>
@@ -166,7 +186,7 @@ export default function Doubts() {
           <div className="w-full flex flex-col md:flex-row gap-3">
             <select value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)} className="bg-[#FAF7F2] border border-[#EBDDD0] text-[#3B3633] text-sm font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50 shadow-sm cursor-pointer md:w-1/4">
               <option value="All Courses">All Courses</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+              {courses.map(c => <option key={c.course_code} value={c.course_code}>{c.course_title}</option>)}
             </select>
             
             <div className="relative flex-1">
