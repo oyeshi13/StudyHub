@@ -71,7 +71,14 @@ export default function Doubts() {
     try {
       setLoading(true);
       const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-      await doubtService.createDoubt({ ...formData, tags: tagsArray });
+      //await doubtService.createDoubt({ ...formData, tags: tagsArray });
+
+      await fetch("http://localhost:5000/doubts/post-doubt",{
+        method: "POST",
+        body : JSON.stringify({
+          
+        })
+      })
       
       // Reload feed
       const updatedDoubts = await doubtService.getDoubts({ search: searchQuery, courseId: selectedCourseId, sort: sortBy });
