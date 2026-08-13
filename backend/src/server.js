@@ -50,7 +50,7 @@ app.use("/doubts/courses/getDoubts",getAllDoubtsRoute)
 
 app.use("/doubts/post-doubt",postDoubtRoute)
 
-// 🔴 AUTH ROUTE (এইটা নিশ্চিত করুন)
+// AUTH ROUTE
 app.use("/api/auth", authRouter);
 
 // Other Routes

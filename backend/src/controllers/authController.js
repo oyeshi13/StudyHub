@@ -9,7 +9,7 @@ const register = async (req, res) => {
             return res.status(400).json({ message: "All fields are required!" })
         }
 
-        // 🟢 "Student" এর বদলে সব ছোট হাতের student দিন
+        
         const userCheck = await pool.query("SELECT * FROM student WHERE email = $1", [email])
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ message: "Email already registered!" })
@@ -17,7 +17,7 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        // 🟢 এখানেও student
+        
         const newUser = await pool.query(
             `INSERT INTO student (name, email, password, department) 
              VALUES ($1, $2, $3, $4) 
