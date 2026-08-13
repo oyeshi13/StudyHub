@@ -3,9 +3,83 @@ import React, { useState } from 'react';
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
-  // Toggle between login and register forms
-  const toggleAuthMode = () => setIsLogin(!isLogin);
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    department: 'CSE' // Default value
+  });
 
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [loading, setLoading] = useState(false);
+
+  // Toggle mode & clear inputs
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    setMessage({ type: '', text: '' });
+  };
+
+  // Handle Input Changes
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+ 
+
+// Submit Handler connected to Backend
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match!' });
+      return;
+    }
+
+    setLoading(true);
+
+    // ব্যাকএন্ডের সঠিক URL
+    // 🟢 localhost বদলে 127.0.0.1 ব্যবহার করুন
+    const url = isLogin 
+      ? 'http://127.0.0.1:5000/api/auth/login' 
+      : 'http://127.0.0.1:5000/api/auth/register';
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          department: formData.department
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message || 'Success!' });
+        if (!isLogin) {
+          setTimeout(() => {
+            setIsLogin(true);
+            setMessage({ type: '', text: '' });
+          }, 1500);
+        }
+      } else {
+        setMessage({ type: 'error', text: data.message || data.error || 'Server error occurred' });
+      }
+    } catch (err) {
+      console.error("Fetch Error Detail:", err);
+      setMessage({ type: 'error', text: 'Network Error: Check console for details' });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center p-6">
       {/* Main Container */}
@@ -31,19 +105,33 @@ export default function AuthPage() {
           <h2 className="text-3xl font-extrabold text-[#3B3633] mb-2 tracking-tight">
             {isLogin ? 'Welcome back' : 'Create an account'}
           </h2>
-          <p className="text-[#3B3633]/60 text-sm mb-8 font-medium">
+          <p className="text-[#3B3633]/60 text-sm mb-6 font-medium">
             {isLogin 
               ? 'Enter your details to access your study groups and resources.' 
               : 'Join thousands of students sharing notes and solving problems.'}
           </p>
 
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-            {/* Conditional Name Field for Registration */}
+          {/* Feedback Message */}
+          {message.text && (
+            <div className={`p-3.5 mb-4 rounded-2xl text-xs font-bold text-center ${
+              message.type === 'success' 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Conditional Name Field */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Full Name</label>
                 <input 
                   type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="John Doe" 
                   className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                   required
@@ -55,11 +143,34 @@ export default function AuthPage() {
               <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Email</label>
               <input 
                 type="email" 
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="student@university.edu" 
                 className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                 required
               />
             </div>
+
+            {/* Department Dropdown for Registration */}
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Department</label>
+                <select 
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
+                  required
+                >
+                  <option value="CSE">CSE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="ARCHI">ARCHI</option>
+                  <option value="ME">ME</option>
+                  <option value="CE">CE</option>
+                </select>
+              </div>
+            )}
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -72,18 +183,24 @@ export default function AuthPage() {
               </div>
               <input 
                 type="password" 
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 placeholder="••••••••" 
                 className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                 required
               />
             </div>
 
-            {/* Conditional Confirm Password Field for Registration */}
+            {/* Confirm Password */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Confirm Password</label>
                 <input 
                   type="password" 
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                   placeholder="••••••••" 
                   className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                   required
@@ -93,9 +210,10 @@ export default function AuthPage() {
 
             <button 
               type="submit" 
-              className="w-full bg-[#262423] hover:bg-black text-[#FAF7F2] font-bold py-4 rounded-2xl shadow-lg shadow-black/10 transition-all transform hover:-translate-y-0.5 mt-2"
+              disabled={loading}
+              className="w-full bg-[#262423] hover:bg-black disabled:bg-gray-400 text-[#FAF7F2] font-bold py-4 rounded-2xl shadow-lg shadow-black/10 transition-all transform hover:-translate-y-0.5 mt-2"
             >
-              {isLogin ? 'Sign In' : 'Sign Up'}
+              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
             </button>
           </form>
 
@@ -110,10 +228,8 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Right Side: Branding & Testimonial Panel */}
+        {/* Right Side: Branding Panel */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-[#F6DEBA] via-[#F4B7CC] to-[#D1BCFA] p-12 text-[#3B3633] flex-col justify-between relative overflow-hidden rounded-r-[2.5rem]">
-          
-          {/* Decorative Background Elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-40 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-40 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
 
