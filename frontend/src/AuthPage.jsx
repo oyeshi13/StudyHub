@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
+    student_id: '',
     name: '',
     email: '',
     password: '',
@@ -26,9 +27,7 @@ export default function AuthPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
- 
-
-// Submit Handler connected to Backend
+  // Submit Handler connected to Backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ type: '', text: '' });
@@ -40,34 +39,50 @@ export default function AuthPage() {
 
     setLoading(true);
 
-    // ব্যাকএন্ডের সঠিক URL
-    // 🟢 localhost বদলে 127.0.0.1 ব্যবহার করুন
     const url = isLogin 
       ? 'http://127.0.0.1:5000/api/auth/login' 
       : 'http://127.0.0.1:5000/api/auth/register';
     
+    // লগইন এবং সাইনআপের জন্য আলাদা পেলোড
+    const payload = isLogin
+      ? {
+          email: formData.email,
+          password: formData.password
+        }
+      : {
+          student_id: parseInt(formData.student_id),
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          department: formData.department
+        };
+
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
         },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          department: formData.department
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Success!' });
-        if (!isLogin) {
+
+        if (isLogin) {
+          // 🟢 লগইন সফল হলে স্টুডেন্ট ডেটা সেভ এবং হোম পেজে রিডাইরেক্ট
+          localStorage.setItem('student', JSON.stringify(data.student));
+          
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        } else {
+          // 🟢 রেজিস্ট্রেশন সফল হলে লগইন স্ক্রিনে নিয়ে যাবে
           setTimeout(() => {
             setIsLogin(true);
-            setMessage({ type: '', text: '' });
+            setMessage({ type: 'success', text: 'Registration successful! Please login.' });
           }, 1500);
         }
       } else {
@@ -80,6 +95,7 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center p-6">
       {/* Main Container */}
@@ -123,6 +139,22 @@ export default function AuthPage() {
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Student ID Field for Registration */}
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Student ID</label>
+                <input 
+                  type="number" 
+                  name="student_id"
+                  value={formData.student_id}
+                  onChange={handleChange}
+                  placeholder="e.g. 2105001" 
+                  className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
+                  required
+                />
+              </div>
+            )}
+
             {/* Conditional Name Field */}
             {!isLogin && (
               <div>
@@ -139,6 +171,7 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* Email Field */}
             <div>
               <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Email</label>
               <input 
@@ -172,6 +205,7 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* Password Field */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="block text-sm font-bold text-[#3B3633]">Password</label>
