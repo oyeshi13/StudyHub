@@ -1,9 +1,13 @@
 import express from "express";
-import {register,login} from "../controllers/authController.js";
+import { register, login, getPendingStudents, approveStudent } from "../controllers/authController.js";
 
-const authRouter = express.Router();
+const router = express.Router();
 
-authRouter.post("/register", register);
-authRouter.post("/login", login);
+router.post("/register", register);
+router.post("/login", login);
 
-export default authRouter
+// অ্যাডমিনের জন্য এই দুই লাইন:
+router.get("/pending-students", getPendingStudents);
+router.put("/approve-student/:id", approveStudent);
+
+export default router;

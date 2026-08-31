@@ -9,6 +9,7 @@ import GroupPage from './GroupPage';
 import Doubts from './Doubts';
 import DoubtDetails from './DoubtDetails';
 import ExploreDepartments from './ExploreDepartments';
+import AdminDashboard from "./AdminDashboard";
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
       <Route path="/doubts" element={<Doubts />} />
       <Route path="/doubts/:doubtId" element={<DoubtDetails />} />
       <Route path="/explore-departments" element={<ExploreDepartments />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
     </Routes>
   );
 }

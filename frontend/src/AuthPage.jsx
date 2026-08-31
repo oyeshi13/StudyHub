@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AuthPage() {
@@ -12,12 +12,12 @@ export default function AuthPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    department: '' // Default value
+    department: ''
   });
 
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
-  const [departments,setDepartments] = useState([])
+  const [departments, setDepartments] = useState([]);
 
   // Toggle mode & clear inputs
   const toggleAuthMode = () => {
@@ -46,7 +46,6 @@ export default function AuthPage() {
       ? 'http://127.0.0.1:5000/api/auth/login' 
       : 'http://127.0.0.1:5000/api/auth/register';
     
-    
     const payload = isLogin
       ? {
           email: formData.email,
@@ -72,56 +71,69 @@ export default function AuthPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: data.message || 'Success!' });
-
         if (isLogin) {
+          setMessage({ type: 'success', text: data.message || 'Login successful!' });
           
           localStorage.setItem('user', JSON.stringify(data.user || data.student || data));
-          if (data.role) {
-            localStorage.setItem('role', data.role);
-          }
+          localStorage.setItem('role', data.role || 'student');
           
           setTimeout(() => {
-            navigate('/dashboard');
+            if (data.role === 'admin') {
+              navigate('/admin/dashboard');
+            } else {
+              navigate('/dashboard');
+            }
           }, 1000);
+
         } else {
-         
+          // রেজিস্ট্রেশনের পর এপ্রুভালের স্পষ্ট মেসেজ দেখানো
+          setMessage({ 
+            type: 'success', 
+            text: data.message || 'Registration submitted! Please wait for admin approval.' 
+          });
+
+          // ফর্ম ফিল্ডগুলো খালি করে সাইন-ইন পেজে নিয়ে যাওয়া
+          setFormData({
+            student_id: '',
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            department: ''
+          });
+
           setTimeout(() => {
             setIsLogin(true);
-            setMessage({ type: 'success', text: 'Registration successful! Please login.' });
-          }, 1500);
+          }, 2500);
         }
       } else {
         setMessage({ type: 'error', text: data.message || data.error || 'Server error occurred' });
       }
     } catch (err) {
       console.error("Fetch Error Detail:", err);
-      setMessage({ type: 'error', text: 'Network Error: Check console for details' });
+      setMessage({ type: 'error', text: 'Network Error: Unable to connect to server' });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-  const loadDepartments = async () => {
-    try {
-      setLoading(true);
+    const loadDepartments = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:5000/getAllDept`);
+        const fetchedDepartments = await response.json();
+        setDepartments(fetchedDepartments);
+      } catch (err) {
+        console.error("Failed to load departments:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const response = await fetch(`http://localhost:5000/getAllDept`);
-      const fetchedDepartments = await response.json();
+    loadDepartments();
+  }, []);
 
-      console.log(fetchedDepartments);
-      setDepartments(fetchedDepartments);
-
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadDepartments();
-}, []);
   return (
     <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center p-6">
       {/* Main Container */}
@@ -135,7 +147,7 @@ export default function AuthPage() {
             <div className="flex items-center space-x-1 p-1.5 bg-[#F6DEBA] rounded-xl shadow-sm">
               <div className="w-3 h-3 bg-[#3B3633] rounded-full"></div>
               <div className="w-4 h-4 border-2 border-[#D1BCFA] rounded-full flex items-center justify-center">
-                <div className="w-1-h-1 bg-[#3B3633] rounded-full"></div>
+                <div className="w-1 h-1 bg-[#3B3633] rounded-full"></div>
               </div>
               <div className="w-3 h-3 bg-[#B3CFF3] rounded-full"></div>
             </div>
@@ -181,7 +193,7 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Conditional Name Field */}
+            {/* Name Field */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Full Name</label>
@@ -215,20 +227,19 @@ export default function AuthPage() {
             {!isLogin && (
               <div>
                 <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Department</label>
-                  <select 
+                <select 
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
                   className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                   required
-                  >
+                >
                   <option value="" disabled>Select department</option>
-
                   {departments.map(d => (
-                  <option key={d.dept_name} value={d.dept_name}>
-                    {d.dept_name}
-                  </option>
-                ))}
+                    <option key={d.dept_name} value={d.dept_name}>
+                      {d.dept_name}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}

@@ -1,83 +1,164 @@
-import pool from "../config/db.js"
-import bcrypt from "bcrypt"
+import pool from "../config/db.js";
+import bcrypt from "bcrypt";
 
-// register
+// REGISTER (Only for Students)
 const register = async (req, res) => {
     try {
-        const { student_id, name, email, password, department } = req.body
+        const { student_id, name, email, password, department } = req.body;
 
         if (!student_id || !name || !email || !password || !department) {
-            return res.status(400).json({ message: "All fields are required!" })
+            return res.status(400).json({ message: "All fields are required!" });
         }
 
-       
-        const userCheck = await pool.query(
-            "SELECT * FROM student WHERE email = $1 OR student_id = $2", 
-            [email, student_id]
-        )
-        if (userCheck.rows.length > 0) {
-            return res.status(400).json({ message: "Email or Student ID already registered!" })
+        const cleanEmail = email.trim().toLowerCase();
+
+        // ইমেইল বা আইডি আগে থেকে আছে কিনা চেক
+        const existingStudent = await pool.query(
+            "SELECT * FROM Student WHERE LOWER(email) = $1 OR student_id = $2",
+            [cleanEmail, student_id]
+        );
+
+        if (existingStudent.rows.length > 0) {
+            return res.status(400).json({ message: "Student ID or Email already exists!" });
         }
 
-       
-        const hashedPassword = await bcrypt.hash(password, 10)
+        // স্টুডেন্টের জন্য পাসওয়ার্ড হ্যাশ
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        //new user insert
-        const newUser = await pool.query(
-            `INSERT INTO student (student_id, name, email, password, department) 
-             VALUES ($1, $2, $3, $4, $5) 
-             RETURNING student_id, name, email, department, reputation_points`,
-            [student_id, name, email, hashedPassword, department]
-        )
+        // নতুন স্টুডেন্ট ইনসার্ট (is_approved ডিফল্টভাবে FALSE থাকবে)
+        const newStudent = await pool.query(
+            "INSERT INTO Student (student_id, name, email, password, department, is_approved) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING student_id, name, email, department, is_approved",
+            [student_id, name, cleanEmail, hashedPassword, department]
+        );
 
-        res.status(201).json({
-            message: "Student registered successfully!",
-            student: newUser.rows[0]
-        })
+        return res.status(201).json({
+            message: "Registration submitted successfully! Please wait for admin approval.",
+            student: newStudent.rows[0]
+        });
+
     } catch (err) {
-        console.error("Registration Error:", err.message)
-        res.status(500).json({ error: "Server Error: " + err.message })
+        console.error("Register Error:", err.message);
+        res.status(500).json({ error: "Server Error: " + err.message });
     }
-}
+};
 
-// LOGIN 
+// LOGIN (Handles both Admin & Student)
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required!" })
+            return res.status(400).json({ message: "Email and password are required!" });
         }
 
-        const userResult = await pool.query("SELECT * FROM student WHERE email = $1", [email])
+        const cleanEmail = email.trim().toLowerCase();
+
+        // ১. Admin চেক (সরাসরি প্লেইন টেক্সট তুলনা, কোনো হ্যাশ ঝামেলা নেই)
+        const adminResult = await pool.query(
+            "SELECT * FROM Admin WHERE LOWER(email) = $1", 
+            [cleanEmail]
+        );
+        console.log("Found Admin Data:", adminResult.rows); // এই লাইনটি দিলে টার্মিনালে আসল ঘটনা দেখা যাবে
         
-        if (userResult.rows.length === 0) {
-            return res.status(400).json({ message: "Invalid email or password!" })
+        if (adminResult.rows.length > 0) {
+            const admin = adminResult.rows[0];
+            
+            // প্লেইন টেক্সট পাসওয়ার্ড মিলানো
+            if (password !== admin.password) {
+                return res.status(400).json({ message: "Invalid email or password!" });
+            }
+
+            return res.status(200).json({
+                message: "Admin login successful!",
+                role: "admin",
+                user: {
+                    admin_id: admin.admin_id,
+                    name: admin.name,
+                    email: admin.email,
+                    department: admin.department
+                }
+            });
         }
 
-        const user = userResult.rows[0]
+        // ২. Student চেক (হ্যাশ তুলনা + Approval চেক)
+        const studentResult = await pool.query(
+            "SELECT * FROM Student WHERE LOWER(email) = $1", 
+            [cleanEmail]
+        );
+        
+        if (studentResult.rows.length > 0) {
+            const student = studentResult.rows[0];
+            const isMatch = await bcrypt.compare(password, student.password);
+            
+            if (!isMatch) {
+                return res.status(400).json({ message: "Invalid email or password!" });
+            }
 
-       
-        const isMatch = await bcrypt.compare(password, user.password)
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid email or password!" })
+            if (student.is_approved !== true) {
+                return res.status(403).json({ 
+                    message: "Account pending approval. Please wait for admin verification." 
+                });
+            }
+
+            return res.status(200).json({
+                message: "Student login successful!",
+                role: "student",
+                user: {
+                    student_id: student.student_id,
+                    name: student.name,
+                    email: student.email,
+                    department: student.department,
+                    reputation_points: student.reputation_points
+                }
+            });
+        }
+
+        // ইউজার পাওয়া না গেলে
+        return res.status(400).json({ message: "Invalid email or password!" });
+
+    } catch (err) {
+        console.error("Login Error:", err.message);
+        res.status(500).json({ error: "Server Error: " + err.message });
+    }
+};
+
+// GET ALL PENDING STUDENTS
+const getPendingStudents = async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT student_id, name, email, department FROM Student WHERE is_approved = FALSE ORDER BY student_id ASC"
+        );
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error("Error fetching pending students:", err.message);
+        res.status(500).json({ error: "Server Error: " + err.message });
+    }
+};
+
+// APPROVE STUDENT
+const approveStudent = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "UPDATE Student SET is_approved = TRUE WHERE student_id = $1 RETURNING *",
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Student not found!" });
         }
 
         res.status(200).json({
-            message: "Login successful!",
-            student: {
-                student_id: user.student_id,
-                name: user.name,
-                email: user.email,
-                department: user.department,
-                reputation_points: user.reputation_points
-            }
-        })
+            message: "Student approved successfully!",
+            student: result.rows[0]
+        });
     } catch (err) {
-        console.error("Login Error:", err.message)
-        res.status(500).json({ error: "Server Error: " + err.message })
+        console.error("Error approving student:", err.message);
+        res.status(500).json({ error: "Server Error: " + err.message });
     }
-}
+};
 
-
-export { register, login }
+// ফাইলের শেষ লাইনে export-এ নামগুলো যুক্ত করে দিন:
+export { register, login, getPendingStudents, approveStudent };
