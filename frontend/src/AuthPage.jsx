@@ -1,6 +1,8 @@
-import  { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AuthPage() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(false);
 
   // Form State
@@ -74,13 +76,16 @@ export default function AuthPage() {
 
         if (isLogin) {
           
-          localStorage.setItem('student', JSON.stringify(data.student));
+          localStorage.setItem('user', JSON.stringify(data.user || data.student || data));
+          if (data.role) {
+            localStorage.setItem('role', data.role);
+          }
           
           setTimeout(() => {
-            window.location.href = '/';
+            navigate('/dashboard');
           }, 1000);
         } else {
-          
+         
           setTimeout(() => {
             setIsLogin(true);
             setMessage({ type: 'success', text: 'Registration successful! Please login.' });
@@ -130,7 +135,7 @@ export default function AuthPage() {
             <div className="flex items-center space-x-1 p-1.5 bg-[#F6DEBA] rounded-xl shadow-sm">
               <div className="w-3 h-3 bg-[#3B3633] rounded-full"></div>
               <div className="w-4 h-4 border-2 border-[#D1BCFA] rounded-full flex items-center justify-center">
-                <div className="w-1 h-1 bg-[#3B3633] rounded-full"></div>
+                <div className="w-1-h-1 bg-[#3B3633] rounded-full"></div>
               </div>
               <div className="w-3 h-3 bg-[#B3CFF3] rounded-full"></div>
             </div>

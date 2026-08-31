@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ==========================================
 // 1. REUSABLE POST COMPONENT
@@ -121,8 +121,18 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
 // 2. MAIN DASHBOARD COMPONENT
 // ==========================================
 export default function UserDashboard() {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [postText, setPostText] = useState('');
+
+  //  লগআউট হ্যান্ডলার
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('student');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user_profile');
+    navigate('/login');
+  };
 
   const feedPosts = [
     {
@@ -170,14 +180,27 @@ export default function UserDashboard() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-5">
+        <div className="flex items-center space-x-4">
           <button className="relative p-2.5 text-[#3B3633]/60 hover:bg-[#EBDDD0]/50 hover:text-[#3B3633] rounded-xl transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#F4B7CC] rounded-full border-2 border-[#FAF7F2]"></span>
           </button>
-          <Link to="/profile" className="w-10 h-10 rounded-xl bg-[#B3CFF3] shadow-sm flex items-center justify-center text-[#3B3633] font-extrabold text-sm cursor-pointer border border-white/50">
+          
+          <Link to="/profile" className="w-10 h-10 rounded-xl bg-[#B3CFF3] shadow-sm flex items-center justify-center text-[#3B3633] font-extrabold text-sm cursor-pointer border border-white/50 hover:opacity-90 transition-opacity">
             ME
           </Link>
+
+          {/* Top Navbar Logout Button */}
+          <button 
+            onClick={handleLogout}
+            title="Logout"
+            className="flex items-center space-x-1.5 bg-[#F4B7CC]/20 hover:bg-[#F4B7CC]/40 text-[#3B3633] font-extrabold px-3.5 py-2 rounded-xl text-xs transition-colors border border-[#F4B7CC]/30"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </nav>
 
@@ -208,41 +231,20 @@ export default function UserDashboard() {
             <span className="text-xl">👤</span> <span>Profile</span>
           </Link>
         </div>
+
+        
+        <div className="p-4 border-t border-[#EBDDD0]">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl text-red-600 hover:bg-red-50 font-extrabold transition-colors"
+          >
+            <span className="text-xl">🚪</span>
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
       <main className="max-w-2xl mx-auto pt-8 px-4 pb-20">
-        {/* <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8">
-          <div className="flex space-x-4">
-            <div className="w-11 h-11 rounded-2xl bg-[#F6DEBA] flex-shrink-0 flex items-center justify-center text-[#3B3633] font-extrabold shadow-inner">
-              ME
-            </div>
-            <textarea 
-              className="w-full bg-[#EBDDD0]/40 border-none rounded-2xl px-5 py-3 focus:outline-none focus:ring-4 focus:ring-[#D1BCFA]/50 focus:bg-white transition-all resize-none text-sm font-bold text-[#3B3633] placeholder-[#3B3633]/40"
-              rows="3"
-              placeholder="Share a resource, ask a doubt, or start a discussion..."
-              value={postText}
-              onChange={(e) => setPostText(e.target.value)}
-            ></textarea>
-          </div>
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#EBDDD0]">
-            <div className="flex space-x-2">
-              <button className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2 rounded-xl transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                <span>File / PDF</span>
-              </button>
-              <button className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2 rounded-xl transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                <span>Link</span>
-              </button>
-            </div>
-            <button 
-              className={`px-6 py-2.5 rounded-xl font-extrabold text-sm shadow-sm transition-all ${postText.length > 0 ? 'bg-[#262423] hover:bg-black text-[#FAF7F2]' : 'bg-[#EBDDD0]/50 text-[#3B3633]/30 cursor-not-allowed'}`}
-            >
-              Post
-            </button>
-          </div>
-        </div> */}
-
         <div>
           <h2 className="text-[11px] font-extrabold text-[#3B3633]/50 mb-5 uppercase tracking-widest pl-2">Your Feed</h2>
           {feedPosts.map((post) => (
