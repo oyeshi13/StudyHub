@@ -33,6 +33,7 @@ export default function Doubts() {
         setError(null);
       } catch (err) {
         setError("Failed to load courses. Please try again.");
+        console.log(err);
       } finally {
         setLoading(false);
       }

@@ -14,6 +14,7 @@ import joinGroupRoute from "./routes/joinRouter.js"
 import getAllCoursesRoute from "./routes/getAllCoursesRouter.js"
 import getAllDoubtsRoute from "./routes/getAllDoubtsRouter.js"
 import postDoubtRoute from "./routes/postDoubtRouter.js"
+import getAllDept from "./routes/getAllDeptRouter.js"
 
 dotenv.config()
 
@@ -58,6 +59,7 @@ app.use("/explore-departments", departmentRouter)
 app.use("/groups", groupRouter)
 app.use("/groups/posts", getPosts)
 app.use("/dept", getDept)
+app.use("/getAllDept",getAllDept)
 app.use("/groups/courses", getCourses)
 
 

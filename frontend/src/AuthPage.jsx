@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,11 +9,12 @@ export default function AuthPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    department: 'CSE' // Default value
+    department: '' // Default value
   });
 
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
+  const [departments,setDepartments] = useState([])
 
   // Toggle mode & clear inputs
   const toggleAuthMode = () => {
@@ -40,8 +41,7 @@ export default function AuthPage() {
 
     setLoading(true);
 
-    // ব্যাকএন্ডের সঠিক URL
-    // 🟢 localhost বদলে 127.0.0.1 ব্যবহার করুন
+    
     const url = isLogin 
       ? 'http://127.0.0.1:5000/api/auth/login' 
       : 'http://127.0.0.1:5000/api/auth/register';
@@ -80,6 +80,27 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+  const loadDepartments = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`http://localhost:5000/getAllDept`);
+      const fetchedDepartments = await response.json();
+
+      console.log(fetchedDepartments);
+      setDepartments(fetchedDepartments);
+
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadDepartments();
+}, []);
   return (
     <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center p-6">
       {/* Main Container */}
@@ -132,7 +153,7 @@ export default function AuthPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="John Doe" 
+                  placeholder="Tamanna Haque" 
                   className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                   required
                 />
@@ -156,18 +177,20 @@ export default function AuthPage() {
             {!isLogin && (
               <div>
                 <label className="block text-sm font-bold text-[#3B3633] mb-1.5">Department</label>
-                <select 
+                  <select 
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
                   className="w-full px-4 py-3.5 rounded-2xl border-none focus:ring-4 focus:ring-[#D1BCFA]/50 outline-none transition-all bg-[#EBDDD0]/50 focus:bg-white text-sm text-[#3B3633]"
                   required
-                >
-                  <option value="CSE">CSE</option>
-                  <option value="EEE">EEE</option>
-                  <option value="ARCHI">ARCHI</option>
-                  <option value="ME">ME</option>
-                  <option value="CE">CE</option>
+                  >
+                  <option value="" disabled>Select department</option>
+
+                  {departments.map(d => (
+                  <option key={d.dept_name} value={d.dept_name}>
+                    {d.dept_name}
+                  </option>
+                ))}
                 </select>
               </div>
             )}

@@ -7,10 +7,10 @@ const getAllCourses = (async (req,res)=>{
             FROM COURSES c
             WHERE c.dept_code IN(
             SELECT dept_code 
-            FROM DEPT_GROUPS dp
-            JOIN JOINED_GROUPS jg
-            ON dp.group_id = jg.group_id
-            WHERE jg.student_id = 2405157
+            FROM DEPT_GROUPS DG
+            JOIN STUDENT S
+            ON DG.GROUP_NAME = S.DEPARTMENT
+            WHERE S.student_id = 2405157
             )`
         )
 

@@ -6,11 +6,11 @@ const getDepartments = (async (req,res)=>{
             `SELECT *
             FROM DEPARTMENTS
             WHERE dept_code NOT IN(
-            SELECT dept_code
-            FROM DEPT_GROUPS dp
-            JOIN JOINED_GROUPS jg
-            ON jg.group_id = dp.group_id
-            WHERE student_id = 2405157
+            SELECT DG.dept_code
+            FROM DEPT_GROUPS DG
+            JOIN STUDENT S
+            ON DG.GROUP_NAME = S.DEPARTMENT
+            WHERE S.student_id = 2405157
             )
             `
         )
