@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AuthPage() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(false);
 
   // Form State
@@ -72,14 +74,17 @@ export default function AuthPage() {
         setMessage({ type: 'success', text: data.message || 'Success!' });
 
         if (isLogin) {
-          // 🟢 লগইন সফল হলে স্টুডেন্ট ডেটা সেভ এবং হোম পেজে রিডাইরেক্ট
-          localStorage.setItem('student', JSON.stringify(data.student));
+          // 🟢 লগইন সফল হলে স্টুডেন্ট ও রোল ডেটা সেভ এবং ড্যাশবোর্ডে রিডাইরেক্ট
+          localStorage.setItem('user', JSON.stringify(data.user || data.student || data));
+          if (data.role) {
+            localStorage.setItem('role', data.role);
+          }
           
           setTimeout(() => {
-            window.location.href = '/';
+            navigate('/dashboard');
           }, 1000);
         } else {
-          // 🟢 রেজিস্ট্রেশন সফল হলে লগইন স্ক্রিনে নিয়ে যাবে
+          // 🟢 রেজিস্ট্রেশন সফল হলে লগইন স্ক্রিনে নিয়ে যাবে
           setTimeout(() => {
             setIsLogin(true);
             setMessage({ type: 'success', text: 'Registration successful! Please login.' });
@@ -109,7 +114,7 @@ export default function AuthPage() {
             <div className="flex items-center space-x-1 p-1.5 bg-[#F6DEBA] rounded-xl shadow-sm">
               <div className="w-3 h-3 bg-[#3B3633] rounded-full"></div>
               <div className="w-4 h-4 border-2 border-[#D1BCFA] rounded-full flex items-center justify-center">
-                <div className="w-1 h-1 bg-[#3B3633] rounded-full"></div>
+                <div className="w-1-h-1 bg-[#3B3633] rounded-full"></div>
               </div>
               <div className="w-3 h-3 bg-[#B3CFF3] rounded-full"></div>
             </div>
@@ -201,6 +206,13 @@ export default function AuthPage() {
                   <option value="ARCHI">ARCHI</option>
                   <option value="ME">ME</option>
                   <option value="CE">CE</option>
+                  <option value="BME">BME</option>
+                  <option value="IPE">IPE</option>
+                  <option value="ChE">ChE</option>
+                  <option value="MME">MME</option>
+                  <option value="WRE">WRE</option>
+                  <option value="NAME">NAME</option>
+                  <option value="URP">URP</option>
                 </select>
               </div>
             )}
