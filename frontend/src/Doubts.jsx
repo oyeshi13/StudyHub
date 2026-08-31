@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doubtService } from './services/doubtService';
 
+
+const user = JSON.parse(localStorage.getItem('user'));
+
 export default function Doubts() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ export default function Doubts() {
       try {
         setLoading(true);
         //const [fetchedCourses, fetchedDoubts]
-        const response = await fetch(`http://localhost:5000/doubts/courses`)
+        const response = await fetch(`http://localhost:5000/doubts/courses/${user.student_id}`)
         const fetchedCourses = await response.json();
         console.log(fetchedCourses)
         setCourses(fetchedCourses);
@@ -49,7 +52,7 @@ export default function Doubts() {
     const loadDoubts = async () => {
       try {
         setLoading(true);
-        const response =  await fetch(`http://localhost:5000/doubts/courses/getDoubts`)
+        const response =  await fetch(`http://localhost:5000/doubts/courses/getDoubts/${user.student_id}`)
         const fetchedDoubts = await response.json();
         setDoubts(fetchedDoubts);
         setError(null)

@@ -14,11 +14,13 @@ export default function ExploreDepartments() {
   
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem('user'));
+
   useEffect(() => {
     const fetchDepartments = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/explore-departments")
+        const response = await fetch(`http://localhost:5000/explore-departments/${user.student_id}`)
         const data = await response.json()
         setDepartments(data);
       } catch (error) {
@@ -28,7 +30,7 @@ export default function ExploreDepartments() {
       }
     };
     fetchDepartments();
-  }, []);
+  }, [user.student_id]);
 
   const handleJoin = async (departmentId) => {
     if (joinedDepartments[departmentId]) return;
@@ -37,7 +39,7 @@ export default function ExploreDepartments() {
     try {
       // await departmentService.joinDepartment(departmentId);
       // setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }));
-      await fetch(`http://localhost:5000/join/${departmentId}`,{
+      await fetch(`http://localhost:5000/join/${departmentId}/${user.student_id}`,{
         "method" : "POST"
       })
       setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }))

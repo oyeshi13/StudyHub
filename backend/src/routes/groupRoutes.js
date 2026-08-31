@@ -4,6 +4,6 @@ import getMyGroups from "../controllers/groupController.js"
 
 const groupRouter = express.Router()
 
-groupRouter.get("/",getMyGroups)
+groupRouter.get(`/:student_id`,getMyGroups)
 
 export default groupRouter

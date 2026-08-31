@@ -1,6 +1,7 @@
 import pool from "../config/db.js"
 
 const getAllCoursesDoubts = (async (req,res)=>{
+    const {student_id} = req.params
     try{
         const result = pool.query(
             `SELECT *
@@ -13,7 +14,7 @@ const getAllCoursesDoubts = (async (req,res)=>{
             FROM DEPT_GROUPS dp
             JOIN JOINED_GROUPS jg
             ON dp.group_id = jg.group_id
-            WHERE jg.student_id = 2405157
+            WHERE jg.student_id = ${student_id}
             ))
             `
         )

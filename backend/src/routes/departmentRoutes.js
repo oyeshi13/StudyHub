@@ -4,6 +4,6 @@ import getDepartments from "../controllers/departmentController.js"
 
 const departmentRouter = express.Router()
 
-departmentRouter.get("/",getDepartments)
+departmentRouter.get("/:student_id",getDepartments)
 
 export default departmentRouter

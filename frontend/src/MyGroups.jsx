@@ -7,47 +7,18 @@ export default function MyGroups() {
   const [loading,setLoading] = useState(false)
   const navigate = useNavigate();
 
-  // Mock Data for joined departments
-  // const joinedDepartments = [
-  //   {
-  //     id: "cse",
-  //     code: "CSE",
-  //     name: "Computer Science & Engineering",
-  //     members: 128,
-  //     courses: 24,
-  //     newPosts: 12,
-  //     icon: "💻",
-  //     theme: "bg-[#B3CFF3]",
-  //     description: "Discuss courses, assignments, exams, projects, resources, and academic questions with fellow CSE students."
-  //   },
-  //   {
-  //     id: "eee",
-  //     code: "EEE",
-  //     name: "Electrical & Electronic Engineering",
-  //     members: 94,
-  //     courses: 20,
-  //     newPosts: 7,
-  //     icon: "⚡",
-  //     theme: "bg-[#F6DEBA]",
-  //     description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers."
-  //   },
-  //   {
-  //     id: "bme",
-  //     code: "BME",
-  //     name: "Biomedical Engineering",
-  //     members: 76,
-  //     courses: 18,
-  //     newPosts: 4,
-  //     icon: "🧬",
-  //     theme: "bg-[#D1BCFA]",
-  //     description: "Connect over medical imaging, biomaterials, and biology resources."
-  //   }
-  // ];
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  // console.log(user);
+  // console.log(user.student_id);
+  // console.log(user.email);
+
+  
   useEffect(() => {
   const fetchJoinedDepartments = async () => {
         setLoading(true);
         try {
-          const response = await fetch("http://localhost:5000/groups")
+          const response = await fetch(`http://localhost:5000/groups/${user.student_id}`)
           const data = await response.json()
           setJoinedDepartments(data);
         } catch (error) {

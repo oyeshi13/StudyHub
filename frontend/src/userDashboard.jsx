@@ -125,7 +125,7 @@ export default function UserDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [postText, setPostText] = useState('');
 
-  //  লগআউট হ্যান্ডলার
+  
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('student');

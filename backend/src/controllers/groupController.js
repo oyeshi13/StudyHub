@@ -2,12 +2,13 @@ import pool from "../config/db.js"
 
 
 const getMyGroups = (async(req,res)=>{
+    const {student_id} = req.params
     try{
         const result = await pool.query(
             `SELECT *
             FROM DEPT_GROUPS DG JOIN STUDENT S
             ON DG.GROUP_NAME = S.DEPARTMENT
-            WHERE S.STUDENT_ID = 2405157
+            WHERE S.STUDENT_ID = ${student_id}
             `
         )
 

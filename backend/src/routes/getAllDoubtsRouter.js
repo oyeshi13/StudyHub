@@ -3,6 +3,6 @@ import getAllCoursesDoubts from "../controllers/getAllDoubtsController.js"
 
 const getAllDoubtsRoute= express.Router()
 
-getAllDoubtsRoute.get("/",getAllCoursesDoubts)
+getAllDoubtsRoute.get("/:student_id",getAllCoursesDoubts)
 
 export default getAllDoubtsRoute

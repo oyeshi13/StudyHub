@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
     res.send("Hello from backend")
 })
 
-app.use("/explore-departments",departmentRouter)
+app.use(`/explore-departments`,departmentRouter)
 
 app.use("/groups",groupRouter)
 
