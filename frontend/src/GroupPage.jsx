@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-// Modified Post component to support 'course' badge
-const CoursePost = ({ author, course, title, time, content, initialVotes, tags, commentsCount }) => {
+const CoursePost = ({ author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl }) => {
   const [votes, setVotes] = useState(initialVotes);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -32,7 +31,7 @@ const CoursePost = ({ author, course, title, time, content, initialVotes, tags, 
       <div className="flex justify-between items-start mb-5">
         <div className="flex items-center space-x-3.5">
           <div className="w-11 h-11 rounded-2xl bg-[#D1BCFA] text-[#3B3633] flex items-center justify-center font-extrabold text-lg shadow-inner">
-          {(author ? author.charAt(0) : 'U')}
+            {author ? author.charAt(0) : 'U'}
           </div>
           <div>
             <h4 className="font-extrabold text-[#3B3633] text-sm">{author || 'Anonymous'}</h4>
@@ -56,6 +55,21 @@ const CoursePost = ({ author, course, title, time, content, initialVotes, tags, 
       <div className="mb-5">
         <h3 className="text-xl font-extrabold text-[#3B3633] mb-2 tracking-tight">{title}</h3>
         <p className="text-[#3B3633]/80 text-sm leading-relaxed whitespace-pre-wrap font-bold">{content}</p>
+        
+        {fileUrl && fileUrl !== 'N/A' && (
+          <div className="mt-4">
+            <a 
+              href={`http://localhost:5000${fileUrl}`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="inline-flex items-center space-x-2 bg-[#EBDDD0]/50 hover:bg-[#EBDDD0] text-[#3B3633] text-xs font-extrabold px-4 py-2.5 rounded-xl transition-colors border border-[#3B3633]/10"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span>View Attachment</span>
+            </a>
+          </div>
+        )}
+
         {tags && (
           <div className="flex flex-wrap gap-2 mt-4">
             {tags.map((tag, idx) => (
@@ -105,124 +119,68 @@ export default function GroupPage() {
   // Create Post State
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [newPostData, setNewPostData] = useState({ course: '', title: '', content: '', tags: '' });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
-  // MOCK DATA (Can be replaced with backend later)
-  // const departmentsData = {
-  //   cse: {
-  //     id: "cse",
-  //     code: "CSE",
-  //     name: "Computer Science & Engineering",
-  //     members: 128,
-  //     theme: "bg-[#B3CFF3]",
-  //     icon: "💻",
-  //     description: "Discuss courses, assignments, exams, projects, resources and academic questions with fellow CSE students.",
-  //     courses: ["CSE 110", "CSE 111", "CSE 120", "CSE 121", "CSE 220", "CSE 221", "CSE 230"],
-  //     initialPosts: [
-  //       {
-  //         id: 1, title: "Can someone explain Dijkstra's algorithm?", course: "CSE 220", author: "Fabiha Ishrah",
-  //         tags: ["Dijkstra", "Graphs", "Help"], content: "I'm having trouble understanding how the priority queue works in Dijkstra's. Can someone break it down?",
-  //         initialVotes: 42, commentsCount: 8, createdAt: new Date(Date.now() - 7200000).toISOString()
-  //       },
-  //       {
-  //         id: 2, title: "Important topics for the upcoming DSA exam", course: "CSE 220", author: "Alex Chen",
-  //         tags: ["ExamPrep", "DSA"], content: "Does anyone have a list of topics we should prioritize for tomorrow's exam? Are trees included?",
-  //         initialVotes: 67, commentsCount: 15, createdAt: new Date(Date.now() - 86400000).toISOString()
-  //       },
-  //       {
-  //         id: 3, title: "How does database normalization actually work?", course: "CSE 230", author: "Sarah Jenkins",
-  //         tags: ["DBMS", "Normalization"], content: "Specifically struggling with BCNF vs 3NF. Any good resources or simple explanations?",
-  //         initialVotes: 31, commentsCount: 6, createdAt: new Date(Date.now() - 172800000).toISOString()
-  //       },
-  //       {
-  //         id: 4, title: "Need help with recursion and dynamic programming", course: "CSE 120", author: "Rahim Hasan",
-  //         tags: ["DP", "Recursion", "Help"], content: "I just can't wrap my head around identifying the base cases correctly.",
-  //         initialVotes: 19, commentsCount: 4, createdAt: new Date(Date.now() - 3600000).toISOString()
-  //       },
-  //       {
-  //         id: 5, title: "Best resources for graph algorithms?", course: "CSE 221", author: "Nadia Islam",
-  //         tags: ["Graphs", "Resources"], content: "Looking for visualizers or good YouTube series that cover spanning trees and network flow.",
-  //         initialVotes: 54, commentsCount: 11, createdAt: new Date(Date.now() - 259200000).toISOString()
-  //       }
-  //     ]
-  //   },
-  //   eee: {
-  //       id: "eee", code: "EEE", name: "Electrical & Electronic Engineering", members: 94, theme: "bg-[#F6DEBA]", icon: "⚡",
-  //       description: "Collaborate on circuits, power systems, signals, and lab reports with EEE peers.",
-  //       courses: ["EEE 101", "EEE 105", "EEE 201"], initialPosts: []
-  //   },
-  //   bme: {
-  //       id: "bme", code: "BME", name: "Biomedical Engineering", members: 76, theme: "bg-[#D1BCFA]", icon: "🧬",
-  //       description: "Connect over medical imaging, biomaterials, and biology resources.",
-  //       courses: ["BME 201", "BME 205", "BME 301"], initialPosts: []
-  //   }
-  // };
-
-  
-  const [department,setDepartment] = useState(null);
-  const [loading,setLoading] = useState(false)
-  //const {departmentId} = useParams()
+  const [department, setDepartment] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-      const fetchDept = async () => {
-        setLoading(true);
-        try {
-          const response = await fetch(`http://localhost:5000/dept/${departmentId}`)
-          const data = await response.json()
-          setDepartment(data[0]);
-        } catch (error) {
-          console.log("Failed to fetch departments", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchDept();
-    }, [departmentId]);
-
+    const fetchDept = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/dept/${departmentId}`);
+        const data = await response.json();
+        setDepartment(data[0]);
+      } catch (error) {
+        console.log("Failed to fetch departments", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDept();
+  }, [departmentId]);
 
   const [posts, setPosts] = useState([]);
   useEffect(() => {
-      const fetchPosts = async () => {
-        setLoading(true);
-        try {
-          const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`)
-          const data = await response.json()
-          setPosts(data);
-        } catch (error) {
-          console.error("Failed to fetch departments", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchPosts();
-    }, [departmentId]);
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`);
+        const data = await response.json();
+        setPosts(data);
+      } catch (error) {
+        console.error("Failed to fetch posts", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, [departmentId]);
 
-
-    const [courses,setCourses] = useState([])
-
-    useEffect(() => {
-        const fetchCourses = async () => {
-          setLoading(true);
-          try {
-            const response = await fetch(`http://localhost:5000/groups/courses/${departmentId}`)
-            const data = await response.json()
-            setCourses(data);
-          } catch (error) {
-            console.log("Failed to fetch departments", error);
-          } finally {
-            setLoading(false);
-          }
-        };
-        fetchCourses();
-      }, [departmentId]);
-  
+  const [courses, setCourses] = useState([]);
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/groups/courses/${departmentId}`);
+        const data = await response.json();
+        setCourses(data);
+      } catch (error) {
+        console.log("Failed to fetch courses", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, [departmentId]);
 
   if (!department) {
     return <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center font-extrabold text-[#3B3633] text-2xl">Department Not Found</div>;
   }
 
-  // Handle Post Creation
-  // Handle Post Creation
-  const submitPost = async () => {
+  // Handle Post Creation with FormData
+ const submitPost = async () => {
     if (!newPostData.title || !newPostData.content) {
       alert("Title and Content are required!");
       return;
@@ -232,63 +190,66 @@ export default function GroupPage() {
     const studentId = storedUser?.student_id || 2405172;
 
     try {
+      const formData = new FormData();
+      formData.append('title', newPostData.title);
+      formData.append('description', newPostData.content);
+      formData.append('student_id', studentId);
+      formData.append('course_code', newPostData.course || '');
+      
+      // ফাইল সিলেক্ট করা থাকলে তবেই যাবে
+      if (selectedFile) {
+        formData.append('attachment', selectedFile);
+      }
+
+      // এখানে কোনো headers দেওয়া যাবে না!
       const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: newPostData.title,
-          description: newPostData.content,
-          file_url: 'N/A',
-          file_type: 'Text',
-          student_id: studentId
-        })
+        body: formData
       });
 
       if (response.ok) {
-        // ডাটাবেজ থেকে আবার ফ্রেশ পোস্ট ফেচ করা
         const refreshResponse = await fetch(`http://localhost:5000/groups/posts/${departmentId}`);
         const freshData = await refreshResponse.json();
         setPosts(freshData);
 
         setNewPostData({ course: '', title: '', content: '', tags: '' });
+        setSelectedFile(null);
         setIsCreatingPost(false);
       } else {
-        const errData = await response.json();
-        alert("Server error: " + (errData.error || "Could not save post"));
+        const errText = await response.text();
+        console.error("Server Error:", errText);
+        alert("Server error: " + errText);
       }
     } catch (err) {
       console.error("Fetch error:", err);
     }
   };
+
   // Filter and Sort Logic
   let displayPosts = [...posts];
 
-  // 1. Filter by Course
   if (activeCourse !== 'All Courses') {
-    displayPosts = displayPosts.filter(p => p.course === activeCourse);
+    displayPosts = displayPosts.filter(p => (p.course || p.course_code) === activeCourse);
   }
 
-  // 2. Filter by Search Query
   if (searchQuery.trim() !== '') {
     const q = searchQuery.toLowerCase();
     displayPosts = displayPosts.filter(p => 
-      p.title.toLowerCase().includes(q) ||
-      p.content.toLowerCase().includes(q) ||
-      p.author.toLowerCase().includes(q) ||
-      p.course.toLowerCase().includes(q) ||
-      p.tags.some(t => t.toLowerCase().includes(q))
+      p.title?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      p.content?.toLowerCase().includes(q) ||
+      p.author?.toLowerCase().includes(q) ||
+      (p.course && p.course.toLowerCase().includes(q)) ||
+      (p.course_code && p.course_code.toLowerCase().includes(q)) ||
+      (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
     );
   }
 
-  // 3. Sort Posts
-  if (sortBy === 'Newest') displayPosts.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-  if (sortBy === 'Oldest') displayPosts.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-  if (sortBy === 'Most Reacted') displayPosts.sort((a,b) => b.initialVotes - a.initialVotes);
-  if (sortBy === 'Most Commented') displayPosts.sort((a,b) => b.commentsCount - a.commentsCount);
+  if (sortBy === 'Newest') displayPosts.sort((a,b) => new Date(b.createdAt || b.uploaded_at) - new Date(a.createdAt || a.uploaded_at));
+  if (sortBy === 'Oldest') displayPosts.sort((a,b) => new Date(a.createdAt || a.uploaded_at) - new Date(b.createdAt || b.uploaded_at));
+  if (sortBy === 'Most Reacted') displayPosts.sort((a,b) => (b.initialVotes || 0) - (a.initialVotes || 0));
+  if (sortBy === 'Most Commented') displayPosts.sort((a,b) => (b.commentsCount || 0) - (a.commentsCount || 0));
 
-  // Helper formatting for time
   const formatTime = (isoString) => {
     const hours = Math.floor(Math.abs(new Date() - new Date(isoString)) / 36e5);
     if(hours < 1) return "Just now";
@@ -298,7 +259,7 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
-      {/* Navbar Pattern */}
+      {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-[#FAF7F2] border-b border-[#EBDDD0] px-6 h-20 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
           <button onClick={() => setIsMenuOpen(true)} className="p-2.5 rounded-xl text-[#3B3633]/70 hover:bg-[#EBDDD0]/50 transition-colors">
@@ -311,7 +272,7 @@ export default function GroupPage() {
         </div>
       </nav>
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar */}
       {isMenuOpen && <div className="fixed inset-0 bg-[#3B3633]/10 z-40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#FAF7F2] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-[#EBDDD0] flex items-center justify-between">
@@ -327,53 +288,30 @@ export default function GroupPage() {
       </div>
 
       <main className="max-w-3xl mx-auto pt-8 px-4 pb-20">
-        
         {/* GROUP HEADER */}
         <div className="bg-[#FAF7F2] rounded-[2.5rem] shadow-sm border border-[#EBDDD0] p-8 mb-8 relative overflow-hidden animate-fade-in-up">
           <button onClick={() => navigate('/groups')} className="flex items-center space-x-2 text-[#3B3633]/60 hover:text-[#3B3633] font-extrabold text-sm mb-6 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             <span>Back to Groups</span>
           </button>
-
-          {/* <div className="flex flex-col md:flex-row md:items-end justify-between">
-            <div className="flex items-center space-x-5">
-              <div className={`w-20 h-20 ${department.theme} text-[#3B3633] rounded-3xl flex items-center justify-center text-4xl shadow-inner`}>
-                {department.icon}
-              </div>
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight text-[#3B3633]">{department.code}</h1>
-                <h2 className="text-sm font-extrabold text-[#3B3633]/60 mt-0.5">{department.name}</h2>
-              </div>
-            </div>
-            <div className="mt-6 md:mt-0 flex flex-col md:items-end">
-              <span className="bg-white border border-[#EBDDD0] text-[#3B3633] text-xs font-extrabold px-4 py-2 rounded-xl flex items-center shadow-sm">
-                <span className="text-[#B3CFF3] mr-2">✓</span> Joined
-              </span>
-              <div className="text-[11px] font-extrabold text-[#3B3633]/50 uppercase tracking-widest mt-3">
-                {department.members} members • {department.courses.length} courses
-              </div>
-            </div>
-          </div> */}
           <p className="mt-6 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">Welcome to {department.dept_name}</p>
         </div>
 
-        {/* FEED CONTROLS & NEW POST BUTTON */}
+        {/* CONTROLS */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 animate-fade-in-up">
-          
           <div className="flex-1 w-full flex flex-col md:flex-row gap-3">
-            {/* Course Filter */}
             <select 
               value={activeCourse} 
               onChange={(e) => setActiveCourse(e.target.value)}
               className="bg-[#FAF7F2] border border-[#EBDDD0] text-[#3B3633] text-sm font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50 shadow-sm appearance-none cursor-pointer"
             >
               <option value="All Courses">All Courses</option>
-              {courses.map(course => (
-                <option key={course.course} value={course.course}>{course.course}</option>
-              ))}
+              {courses.map((course, idx) => {
+                const val = course.course_code || course.course || course.code;
+                return <option key={val || idx} value={val}>{val}</option>;
+              })}
             </select>
 
-            {/* Search */}
             <div className="relative flex-1">
               <input 
                 type="text" 
@@ -385,7 +323,6 @@ export default function GroupPage() {
               <svg className="w-4 h-4 text-[#3B3633]/40 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
 
-            {/* Sort Dropdown */}
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value)}
@@ -406,23 +343,24 @@ export default function GroupPage() {
           </button>
         </div>
 
-        {/* NEW POST FORM */}
+        {/* CREATE POST FORM */}
         {isCreatingPost && (
           <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8 animate-fade-in-up">
             <h3 className="text-lg font-extrabold text-[#3B3633] mb-4 tracking-tight">Create a New Post</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-extrabold text-[#3B3633]/60 uppercase tracking-wider mb-2">Select Course <span className="text-[#F4B7CC]">*</span></label>
+                <label className="block text-xs font-extrabold text-[#3B3633]/60 uppercase tracking-wider mb-2">Select Course</label>
                 <select 
                   value={newPostData.course} 
                   onChange={(e) => setNewPostData({...newPostData, course: e.target.value})}
                   className="w-full bg-[#EBDDD0]/40 border-none rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-4 focus:ring-[#D1BCFA]/50 focus:bg-white transition-all text-sm font-bold text-[#3B3633]"
                 >
-                  <option value="" disabled>Choose a {department.dept_name} course...</option>
-                  {courses.map(c => (
-                    <option key={c.course} value={c.course}>{c.course}</option>
-                  ))}
+                  <option value="">Choose a {department.dept_name} course...</option>
+                  {courses.map((c, idx) => {
+                    const val = c.course_code || c.course || c.code;
+                    return <option key={val || idx} value={val}>{val}</option>;
+                  })}
                 </select>
               </div>
 
@@ -460,23 +398,52 @@ export default function GroupPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-6 pt-5 border-t border-[#EBDDD0]">
-              <button className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2 rounded-xl transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                <span>Add Attachment</span>
-              </button>
-              
-              <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-6 pt-5 border-t border-[#EBDDD0] gap-4">
+              <div className="flex items-center space-x-3">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={(e) => setSelectedFile(e.target.files[0])} 
+                  className="hidden" 
+                />
+
                 <button 
-                  onClick={() => setIsCreatingPost(false)}
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/70 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2.5 rounded-xl transition-colors border border-dashed border-[#3B3633]/30"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span className="max-w-[150px] truncate">{selectedFile ? selectedFile.name : 'Add Attachment'}</span>
+                </button>
+
+                {selectedFile && (
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedFile(null)} 
+                    className="text-xs font-bold text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex space-x-3 w-full sm:w-auto justify-end">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingPost(false);
+                    setSelectedFile(null);
+                  }}
                   className="px-6 py-2.5 rounded-xl font-extrabold text-sm shadow-sm bg-white border border-[#EBDDD0] hover:bg-[#EBDDD0]/50 text-[#3B3633] transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
+                  type="button"
                   onClick={submitPost}
-                  disabled={!newPostData.course || !newPostData.title || !newPostData.content}
-                  className={`px-6 py-2.5 rounded-xl font-extrabold text-sm shadow-sm transition-transform ${(!newPostData.course || !newPostData.title || !newPostData.content) ? 'bg-[#EBDDD0]/50 text-[#3B3633]/30 cursor-not-allowed' : 'bg-[#262423] hover:bg-black text-[#FAF7F2] transform hover:-translate-y-0.5'}`}
+                  className="px-6 py-2.5 rounded-xl font-extrabold text-sm shadow-sm transition-transform bg-[#262423] hover:bg-black text-[#FAF7F2] transform hover:-translate-y-0.5"
                 >
                   Create Post
                 </button>
@@ -487,16 +454,17 @@ export default function GroupPage() {
 
         {/* FEED LOOP */}
         <div>
-          {displayPosts.length > 0 ? displayPosts.map((post) => (
-            <div key={post.dept_code} className="animate-fade-in-up">
+          {displayPosts.length > 0 ? displayPosts.map((post, idx) => (
+            <div key={post.resource_id || post.id || idx} className="animate-fade-in-up">
               <CoursePost 
                 author={post.author}
-                course={post.course}
+                course={post.course || post.course_code}
                 title={post.title}
-                time={formatTime(post.createdAt)}
-                content={post.content}
-                initialVotes={post.initialVotes}
-                commentsCount={post.commentsCount}
+                time={formatTime(post.createdAt || post.uploaded_at || new Date())}
+                content={post.description || post.content}
+                fileUrl={post.file_url}
+                initialVotes={post.initialVotes || 0}
+                commentsCount={post.commentsCount || 0}
                 tags={post.tags}
               />
             </div>
@@ -508,7 +476,6 @@ export default function GroupPage() {
             </div>
           )}
         </div>
-
       </main>
     </div>
   );
