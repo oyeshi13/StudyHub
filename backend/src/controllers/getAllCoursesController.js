@@ -4,15 +4,14 @@ const getAllCourses = (async (req,res)=>{
     const {student_id} = req.params
     try{
         const result = await pool.query(
-            `SELECT course_code, course_title, course_title || ' ' || course_code AS course
-            FROM COURSES c
-            WHERE c.dept_code IN(
-            SELECT dept_code 
-            FROM DEPT_GROUPS DG
-            JOIN STUDENT S
-            ON DG.GROUP_NAME = S.DEPARTMENT
-            WHERE S.student_id = ${student_id}
-            )`
+            `SELECT DISTINCT c.course_code, c.course_title,
+                    c.course_title || ' ' || c.course_code AS course
+             FROM COURSES c
+             JOIN DEPT_GROUPS dg ON dg.dept_code = c.dept_code
+             JOIN JOINED_GROUPS jg ON jg.group_id = dg.group_id
+             WHERE jg.student_id = $1
+             ORDER BY c.course_code`,
+            [student_id]
         )
 
         res.send(result.rows)
