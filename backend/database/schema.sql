@@ -186,7 +186,8 @@ INSERT INTO COURSES VALUES(101,'STRUCTURED PROGRAMMING',05),
 
 -- //newly added // changes in database
 INSERT INTO Admin (name, email, password, department)
-VALUES ('Admin fabiha', 'fabiha24ishrah@gmail.com', '$2b$10$EznutqkhPDx7MepPUH1eSe43eBLhVOQk1bT0Y1Eszadkec4fCY7lO', 'CSE');
+VALUES ('Admin fabiha', 'fabiha24ishrah@gmail.com', 'admin', 'CSE');
+
 
 -- //password is manually hashed using 1-8
 

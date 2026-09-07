@@ -86,13 +86,13 @@ export default function AuthPage() {
           }, 1000);
 
         } else {
-          // রেজিস্ট্রেশনের পর এপ্রুভালের স্পষ্ট মেসেজ দেখানো
+          // reg form taken
           setMessage({ 
             type: 'success', 
             text: data.message || 'Registration submitted! Please wait for admin approval.' 
           });
 
-          // ফর্ম ফিল্ডগুলো খালি করে সাইন-ইন পেজে নিয়ে যাওয়া
+          // redirecting to login page
           setFormData({
             student_id: '',
             name: '',

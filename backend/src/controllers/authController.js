@@ -16,8 +16,8 @@ const register = async (req, res) => {
         client = await pool.connect();
         await client.query("BEGIN");
 
-       
-        const existingStudent = await client.query(
+        // checking duplicate account 
+        const existingStudent = await pool.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1 OR student_id = $2",
             [cleanEmail, student_id]
         );
@@ -81,15 +81,17 @@ const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
+
         const adminResult = await pool.query(
             "SELECT * FROM Admin WHERE LOWER(email) = $1", 
             [cleanEmail]
         );
-        console.log("Found Admin Data:", adminResult.rows);
+        console.log("Found Admin Data:", adminResult.rows); 
         
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
             
+            // checking non-hashed admin pass
             if (password !== admin.password) {
                 return res.status(400).json({ message: "Invalid email or password!" });
             }
@@ -139,7 +141,7 @@ const login = async (req, res) => {
             });
         }
 
-        
+        // if cant find user
         return res.status(400).json({ message: "Invalid email or password!" });
 
     } catch (err) {
