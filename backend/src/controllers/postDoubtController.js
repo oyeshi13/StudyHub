@@ -73,4 +73,5 @@ const postDoubt = async (req, res) => {
     }
 };
 
+
 export default postDoubt;

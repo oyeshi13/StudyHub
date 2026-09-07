@@ -16,6 +16,7 @@ import getAllCoursesRoute from "./routes/getAllCoursesRouter.js"
 import getAllDoubtsRoute from "./routes/getAllDoubtsRouter.js"
 import postDoubtRoute from "./routes/postDoubtRouter.js"
 import getAllDept from "./routes/getAllDeptRouter.js"
+import doubtDetailsRoute from "./routes/doubtDetailsRoutes.js"
 
 dotenv.config()
 
@@ -49,20 +50,17 @@ app.use("/join",joinGroupRoute)
 
 app.use("/doubts/courses",getAllCoursesRoute)
 
+
 app.use("/doubts/courses/getDoubts",getAllDoubtsRoute)
 
 app.use("/doubts/post-doubt",postDoubtRoute)
+app.use("/doubts", doubtDetailsRoute)
 
 // AUTH ROUTE
 app.use("/api/auth", authRouter);
 
 // Other Routes
-app.use("/explore-departments", departmentRouter)
-app.use("/groups", groupRouter)
-app.use("/groups/posts", getPosts)
-app.use("/dept", getDept)
 app.use("/getAllDept",getAllDept)
-app.use("/groups/courses", getCourses)
 
 
 app.listen(PORT, () => {

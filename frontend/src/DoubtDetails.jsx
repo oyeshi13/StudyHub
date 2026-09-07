@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doubtService } from './services/doubtService';
+
+const API_URL = 'http://localhost:5000';
 
 export default function DoubtDetails() {
   const { doubtId } = useParams();
@@ -11,17 +12,18 @@ export default function DoubtDetails() {
   
   // Answer Form
   const [newAnswer, setNewAnswer] = useState("");
-  // Reaction states to simulate UX visually
-  const [reactedItems, setReactedItems] = useState({}); 
-
   useEffect(() => {
     const loadDetails = async () => {
       try {
         setLoading(true);
-        const [fetchedDoubt, fetchedAnswers] = await Promise.all([
-          doubtService.getDoubtById(doubtId),
-          doubtService.getAnswersByDoubtId(doubtId)
+        const [doubtResponse, answersResponse] = await Promise.all([
+          fetch(`${API_URL}/doubts/${doubtId}`),
+          fetch(`${API_URL}/doubts/${doubtId}/answers`)
         ]);
+        const fetchedDoubt = await doubtResponse.json();
+        const fetchedAnswers = await answersResponse.json();
+        if (!doubtResponse.ok) throw new Error(fetchedDoubt.message);
+        if (!answersResponse.ok) throw new Error(fetchedAnswers.message);
         setDoubt(fetchedDoubt);
         setAnswers(fetchedAnswers);
       } catch (err) {
@@ -37,40 +39,20 @@ export default function DoubtDetails() {
     e.preventDefault();
     if (!newAnswer.trim()) return;
     try {
-      const addedAnswer = await doubtService.createAnswer(doubtId, newAnswer);
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      const response = await fetch(`${API_URL}/doubts/${doubtId}/answers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newAnswer.trim(), author: user?.student_id })
+      });
+      const addedAnswer = await response.json();
+      if (!response.ok) throw new Error(addedAnswer.message || 'Failed to post answer.');
       setAnswers([...answers, addedAnswer]);
       setDoubt({...doubt, answerCount: doubt.answerCount + 1});
       setNewAnswer("");
     } catch (err) {
-      alert("Failed to post answer");
+      setError(err.message || "Failed to post answer");
     }
-  };
-
-  const handleReactDoubt = async () => {
-    if (reactedItems[doubtId]) return; // prevent spam
-    try {
-      const res = await doubtService.reactToDoubt(doubtId);
-      setDoubt({...doubt, reactionCount: res.count});
-      setReactedItems({...reactedItems, [doubtId]: true});
-    } catch(err) { console.error(err); }
-  };
-
-  const handleReactAnswer = async (ansId) => {
-    if (reactedItems[ansId]) return;
-    try {
-      const res = await doubtService.reactToAnswer(ansId);
-      setAnswers(answers.map(a => a.id === ansId ? {...a, reactionCount: res.count} : a));
-      setReactedItems({...reactedItems, [ansId]: true});
-    } catch(err) { console.error(err); }
-  };
-
-  const handleAcceptAnswer = async (ansId) => {
-    try {
-      await doubtService.acceptAnswer(doubtId, ansId);
-      // Reload answers to trigger re-sort
-      const refreshedAnswers = await doubtService.getAnswersByDoubtId(doubtId);
-      setAnswers(refreshedAnswers);
-    } catch(err) { console.error(err); }
   };
 
   const formatTime = (iso) => {
@@ -121,7 +103,7 @@ export default function DoubtDetails() {
 
           <div className="flex items-center justify-between border-t border-[#EBDDD0] pt-5">
              <div className="flex items-center space-x-1 bg-[#EBDDD0]/30 rounded-2xl border border-[#EBDDD0] p-1.5">
-               <button onClick={handleReactDoubt} className={`p-1.5 rounded-xl transition-colors flex items-center justify-center ${reactedItems[doubtId] ? 'bg-[#F6DEBA] text-[#3B3633]' : 'text-[#3B3633]/40 hover:bg-white hover:text-[#3B3633]'}`}>
+               <button type="button" disabled className="p-1.5 rounded-xl flex items-center justify-center text-[#3B3633]/40" title="Reactions are not available yet">
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>
                </button>
                <span className="font-extrabold text-sm px-2 text-[#3B3633]">{doubt.reactionCount}</span>
@@ -149,18 +131,12 @@ export default function DoubtDetails() {
                     <span className="font-extrabold text-[#3B3633]">{ans.authorName}</span> • {formatTime(ans.createdAt)}
                   </div>
                 </div>
-                {/* Accept Answer Action (Simulated as Doubt Author) */}
-                {!ans.isAccepted && (
-                  <button onClick={() => handleAcceptAnswer(ans.id)} className="text-[10px] text-[#3B3633]/40 hover:text-[#B3CFF3] font-extrabold uppercase tracking-wider transition-colors">
-                    Mark Accepted
-                  </button>
-                )}
               </div>
               <p className="text-[#3B3633]/80 text-sm leading-relaxed font-bold whitespace-pre-wrap mb-5">{ans.content}</p>
               
               <div className="flex items-center space-x-4 border-t border-[#EBDDD0] pt-4">
                 <div className="flex items-center space-x-1">
-                  <button onClick={() => handleReactAnswer(ans.id)} className={`text-lg transition-colors ${reactedItems[ans.id] ? 'text-[#F6DEBA]' : 'text-[#3B3633]/30 hover:text-[#3B3633]'}`}>⬆</button>
+                  <button type="button" disabled className="text-lg text-[#3B3633]/30" title="Reactions are not available yet">⬆</button>
                   <span className="font-extrabold text-sm text-[#3B3633]">{ans.reactionCount}</span>
                 </div>
                 <button className="text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] transition-colors">Reply</button>
