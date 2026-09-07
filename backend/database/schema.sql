@@ -170,11 +170,14 @@ INSERT INTO COURSES VALUES(101,'STRUCTURED PROGRAMMING',05),
 (206,'DIGITAL LOGIC DESIGN SESSIONAL',05),
 (103,'ENGINEERING BASICS',07);
 
-//newly added // changes in database
-INSERT INTO Admin (name, email, password, department)
-VALUES ('Admin fabiha', 'fabiha24ishrah@gmail.com', '$2b$10$EznutqkhPDx7MepPUH1eSe43eBLhVOQk1bT0Y1Eszadkec4fCY7lO', 'CSE');
+//newly added changes in database after week 10
 
-//password is manually hashed using 1-8
+
+
+INSERT INTO Admin (name, email, password, department)
+VALUES ('Admin fabiha', 'fabiha24ishrah@gmail.com', 'admin', 'CSE');
+
+
 
 ALTER TABLE Student ADD COLUMN is_approved BOOLEAN DEFAULT FALSE;
 

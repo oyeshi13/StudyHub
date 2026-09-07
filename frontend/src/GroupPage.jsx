@@ -32,10 +32,10 @@ const CoursePost = ({ author, course, title, time, content, initialVotes, tags, 
       <div className="flex justify-between items-start mb-5">
         <div className="flex items-center space-x-3.5">
           <div className="w-11 h-11 rounded-2xl bg-[#D1BCFA] text-[#3B3633] flex items-center justify-center font-extrabold text-lg shadow-inner">
-            {author.charAt(0)}
+          {(author ? author.charAt(0) : 'U')}
           </div>
           <div>
-            <h4 className="font-extrabold text-[#3B3633] text-sm">{author}</h4>
+            <h4 className="font-extrabold text-[#3B3633] text-sm">{author || 'Anonymous'}</h4>
             <div className="flex items-center text-xs text-[#3B3633]/50 space-x-1.5 mt-1 font-bold">
               {course && (
                 <>
@@ -221,27 +221,47 @@ export default function GroupPage() {
   }
 
   // Handle Post Creation
-  const submitPost = () => {
-    if (!newPostData.course || !newPostData.title || !newPostData.content) return;
-    
-    const newPost = {
-      id: Date.now(),
-      title: newPostData.title,
-      course: newPostData.course,
-      author: "Current User",
-      tags: newPostData.tags ? newPostData.tags.split(',').map(t => t.trim()).filter(t => t) : [],
-      content: newPostData.content,
-      initialVotes: 0,
-      commentsCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    
-    // POST /api/groups/:departmentId/posts would go here
-    setPosts([newPost, ...posts]);
-    setNewPostData({ course: '', title: '', content: '', tags: '' });
-    setIsCreatingPost(false);
-  };
+  // Handle Post Creation
+  const submitPost = async () => {
+    if (!newPostData.title || !newPostData.content) {
+      alert("Title and Content are required!");
+      return;
+    }
 
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const studentId = storedUser?.student_id || 2405172;
+
+    try {
+      const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: newPostData.title,
+          description: newPostData.content,
+          file_url: 'N/A',
+          file_type: 'Text',
+          student_id: studentId
+        })
+      });
+
+      if (response.ok) {
+        // ডাটাবেজ থেকে আবার ফ্রেশ পোস্ট ফেচ করা
+        const refreshResponse = await fetch(`http://localhost:5000/groups/posts/${departmentId}`);
+        const freshData = await refreshResponse.json();
+        setPosts(freshData);
+
+        setNewPostData({ course: '', title: '', content: '', tags: '' });
+        setIsCreatingPost(false);
+      } else {
+        const errData = await response.json();
+        alert("Server error: " + (errData.error || "Could not save post"));
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
   // Filter and Sort Logic
   let displayPosts = [...posts];
 

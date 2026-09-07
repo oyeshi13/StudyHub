@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [notification, setNotification] = useState({ type: '', text: '' });
   const [adminUser, setAdminUser] = useState(null);
 
-  // ১. সেশন ডাটা এবং পেন্ডিং লিস্ট ফেচ
+  // ১. pending list fetching
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedRole = localStorage.getItem('role');
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ২. Approve হ্যান্ডলার
+  // ২. Approval handling
   const handleApprove = async (studentId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/auth/approve-student/${studentId}`, {
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ৩. সাইন আউট
+  // ৩. logout
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');

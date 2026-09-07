@@ -12,7 +12,7 @@ const register = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // ইমেইল বা আইডি আগে থেকে আছে কিনা চেক
+        // checking duplicate account 
         const existingStudent = await pool.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1 OR student_id = $2",
             [cleanEmail, student_id]
@@ -22,11 +22,11 @@ const register = async (req, res) => {
             return res.status(400).json({ message: "Student ID or Email already exists!" });
         }
 
-        // স্টুডেন্টের জন্য পাসওয়ার্ড হ্যাশ
+        
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // নতুন স্টুডেন্ট ইনসার্ট (is_approved ডিফল্টভাবে FALSE থাকবে)
+        // new student reg
         const newStudent = await pool.query(
             "INSERT INTO Student (student_id, name, email, password, department, is_approved) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING student_id, name, email, department, is_approved",
             [student_id, name, cleanEmail, hashedPassword, department]
@@ -54,17 +54,17 @@ const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // ১. Admin চেক (সরাসরি প্লেইন টেক্সট তুলনা, কোনো হ্যাশ ঝামেলা নেই)
+        // ১. Admin 
         const adminResult = await pool.query(
             "SELECT * FROM Admin WHERE LOWER(email) = $1", 
             [cleanEmail]
         );
-        console.log("Found Admin Data:", adminResult.rows); // এই লাইনটি দিলে টার্মিনালে আসল ঘটনা দেখা যাবে
+        console.log("Found Admin Data:", adminResult.rows); 
         
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
             
-            // প্লেইন টেক্সট পাসওয়ার্ড মিলানো
+            // checking non-hashed admin pass
             if (password !== admin.password) {
                 return res.status(400).json({ message: "Invalid email or password!" });
             }
@@ -81,7 +81,7 @@ const login = async (req, res) => {
             });
         }
 
-        // ২. Student চেক (হ্যাশ তুলনা + Approval চেক)
+        // ২. Student pass,mail,approval check
         const studentResult = await pool.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1", 
             [cleanEmail]
@@ -114,7 +114,7 @@ const login = async (req, res) => {
             });
         }
 
-        // ইউজার পাওয়া না গেলে
+        // if cant find user
         return res.status(400).json({ message: "Invalid email or password!" });
 
     } catch (err) {
@@ -160,5 +160,5 @@ const approveStudent = async (req, res) => {
     }
 };
 
-// ফাইলের শেষ লাইনে export-এ নামগুলো যুক্ত করে দিন:
+
 export { register, login, getPendingStudents, approveStudent };
