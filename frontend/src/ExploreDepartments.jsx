@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { departmentService } from './services/departmentService';
 
 export default function ExploreDepartments() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,18 +32,22 @@ export default function ExploreDepartments() {
   }, [user.student_id]);
 
   const handleJoin = async (departmentId) => {
-    if (joinedDepartments[departmentId]) return;
+    if (joinedDepartments[departmentId] || !user?.student_id) return;
     
     setIsJoining(prev => ({ ...prev, [departmentId]: true }));
     try {
-      // await departmentService.joinDepartment(departmentId);
-      // setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }));
-      await fetch(`http://localhost:5000/join/${departmentId}/${user.student_id}`,{
-        "method" : "POST"
-      })
+      const response = await fetch(`http://localhost:5000/join/${departmentId}/${user.student_id}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not join the group.');
+      }
+
       setJoinedDepartments(prev => ({ ...prev, [departmentId]: true }))
     } catch (error) {
-      alert("Failed to join department. Please try again.");
+      alert(error.message || "Failed to join department. Please try again.");
     } finally {
       setIsJoining(prev => ({ ...prev, [departmentId]: false }));
     }

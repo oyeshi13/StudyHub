@@ -5,15 +5,14 @@ const getDepartments = (async (req,res)=>{
     try{
         const result = await pool.query(
             `SELECT *
-            FROM DEPARTMENTS
-            WHERE dept_code NOT IN(
-            SELECT DG.dept_code
-            FROM DEPT_GROUPS DG
-            JOIN STUDENT S
-            ON DG.GROUP_NAME = S.DEPARTMENT
-            WHERE S.student_id = ${student_id}
-            )
-            `
+             FROM DEPARTMENTS
+             WHERE dept_code NOT IN(
+                 SELECT DG.dept_code
+                 FROM DEPT_GROUPS DG
+                 JOIN JOINED_GROUPS JG ON JG.group_id = DG.group_id
+                 WHERE JG.student_id = $1
+             )`,
+            [student_id]
         )
         res.send(result.rows)
     }catch(err){

@@ -6,10 +6,11 @@ const getMyGroups = (async(req,res)=>{
     try{
         const result = await pool.query(
             `SELECT *
-            FROM DEPT_GROUPS DG JOIN STUDENT S
-            ON DG.GROUP_NAME = S.DEPARTMENT
-            WHERE S.STUDENT_ID = ${student_id}
-            `
+             FROM DEPT_GROUPS DG
+             JOIN JOINED_GROUPS JG ON JG.group_id = DG.group_id
+             JOIN DEPARTMENTS D ON D.dept_code = DG.dept_code
+             WHERE JG.student_id = $1`,
+            [student_id]
         )
 
         res.send(result.rows)

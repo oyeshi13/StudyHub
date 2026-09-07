@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 
 // REGISTER (Only for Students)
 const register = async (req, res) => {
+    let client;
     try {
         const { student_id, name, email, password, department } = req.body;
 
@@ -11,26 +12,49 @@ const register = async (req, res) => {
         }
 
         const cleanEmail = email.trim().toLowerCase();
+        const cleanDepartment = department.trim();
+        client = await pool.connect();
+        await client.query("BEGIN");
 
-        // ইমেইল বা আইডি আগে থেকে আছে কিনা চেক
-        const existingStudent = await pool.query(
+       
+        const existingStudent = await client.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1 OR student_id = $2",
             [cleanEmail, student_id]
         );
 
         if (existingStudent.rows.length > 0) {
+            await client.query("ROLLBACK");
             return res.status(400).json({ message: "Student ID or Email already exists!" });
         }
 
-        // স্টুডেন্টের জন্য পাসওয়ার্ড হ্যাশ
+        const departmentGroup = await client.query(
+            `SELECT d.dept_name, dg.group_id
+             FROM DEPARTMENTS d
+             JOIN DEPT_GROUPS dg ON dg.dept_code = d.dept_code
+             WHERE LOWER(TRIM(d.dept_name)) = LOWER(TRIM($1))`,
+            [cleanDepartment]
+        );
+
+        if (departmentGroup.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({ message: "The selected department does not have a group." });
+        }
+
+       
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // নতুন স্টুডেন্ট ইনসার্ট (is_approved ডিফল্টভাবে FALSE থাকবে)
-        const newStudent = await pool.query(
+       
+        const newStudent = await client.query(
             "INSERT INTO Student (student_id, name, email, password, department, is_approved) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING student_id, name, email, department, is_approved",
-            [student_id, name, cleanEmail, hashedPassword, department]
+            [student_id, name, cleanEmail, hashedPassword, departmentGroup.rows[0].dept_name]
         );
+
+        await client.query(
+            "INSERT INTO JOINED_GROUPS (student_id, group_id) VALUES ($1, $2)",
+            [student_id, departmentGroup.rows[0].group_id]
+        );
+        await client.query("COMMIT");
 
         return res.status(201).json({
             message: "Registration submitted successfully! Please wait for admin approval.",
@@ -38,8 +62,11 @@ const register = async (req, res) => {
         });
 
     } catch (err) {
+        if (client) await client.query("ROLLBACK").catch(() => {});
         console.error("Register Error:", err.message);
         res.status(500).json({ error: "Server Error: " + err.message });
+    } finally {
+        client?.release();
     }
 };
 
@@ -54,17 +81,15 @@ const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // ১. Admin চেক (সরাসরি প্লেইন টেক্সট তুলনা, কোনো হ্যাশ ঝামেলা নেই)
         const adminResult = await pool.query(
             "SELECT * FROM Admin WHERE LOWER(email) = $1", 
             [cleanEmail]
         );
-        console.log("Found Admin Data:", adminResult.rows); // এই লাইনটি দিলে টার্মিনালে আসল ঘটনা দেখা যাবে
+        console.log("Found Admin Data:", adminResult.rows);
         
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
             
-            // প্লেইন টেক্সট পাসওয়ার্ড মিলানো
             if (password !== admin.password) {
                 return res.status(400).json({ message: "Invalid email or password!" });
             }
@@ -81,7 +106,7 @@ const login = async (req, res) => {
             });
         }
 
-        // ২. Student চেক (হ্যাশ তুলনা + Approval চেক)
+       
         const studentResult = await pool.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1", 
             [cleanEmail]
@@ -114,7 +139,7 @@ const login = async (req, res) => {
             });
         }
 
-        // ইউজার পাওয়া না গেলে
+        
         return res.status(400).json({ message: "Invalid email or password!" });
 
     } catch (err) {
@@ -160,5 +185,5 @@ const approveStudent = async (req, res) => {
     }
 };
 
-// ফাইলের শেষ লাইনে export-এ নামগুলো যুক্ত করে দিন:
+
 export { register, login, getPendingStudents, approveStudent };

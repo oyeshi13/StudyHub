@@ -3,20 +3,15 @@ import pool from "../config/db.js"
 const getAllCoursesDoubts = (async (req,res)=>{
     const {student_id} = req.params
     try{
-        const result = pool.query(
-            `SELECT *
-            FROM DOUBTS
-            WHERE course_code IN (
-            SELECT course_code
-            FROM COURSES c
-            WHERE c.dept_code IN(
-            SELECT dept_code 
-            FROM DEPT_GROUPS dp
-            JOIN JOINED_GROUPS jg
-            ON dp.group_id = jg.group_id
-            WHERE jg.student_id = ${student_id}
-            ))
-            `
+        const result = await pool.query(
+            `SELECT DISTINCT d.*
+             FROM DOUBTS d
+             JOIN COURSES c ON c.course_code = d.course_code
+             JOIN DEPT_GROUPS dg ON dg.dept_code = c.dept_code
+             JOIN JOINED_GROUPS jg ON jg.group_id = dg.group_id
+             WHERE jg.student_id = $1
+             ORDER BY d.posted_at DESC`,
+            [student_id]
         )
 
         res.send(result.rows)

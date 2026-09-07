@@ -126,8 +126,12 @@ CREATE TABLE IF NOT EXISTS REPORTS (
 
 CREATE TABLE IF NOT EXISTS JOINED_GROUPS(
 student_id INTEGER REFERENCES STUDENT(student_id),
-group_id INTEGER REFERENCES DEPT_GROUPS(group_id)
-)
+group_id INTEGER REFERENCES DEPT_GROUPS(group_id),
+PRIMARY KEY (student_id, group_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS joined_groups_student_group_unique
+ON JOINED_GROUPS (student_id, group_id);
 
 --MADE GROUP ID AUTO GENERATED
 ALTER TABLE dept_groups
@@ -170,11 +174,11 @@ INSERT INTO COURSES VALUES(101,'STRUCTURED PROGRAMMING',05),
 (206,'DIGITAL LOGIC DESIGN SESSIONAL',05),
 (103,'ENGINEERING BASICS',07);
 
-//newly added // changes in database
+-- //newly added // changes in database
 INSERT INTO Admin (name, email, password, department)
 VALUES ('Admin fabiha', 'fabiha24ishrah@gmail.com', '$2b$10$EznutqkhPDx7MepPUH1eSe43eBLhVOQk1bT0Y1Eszadkec4fCY7lO', 'CSE');
 
-//password is manually hashed using 1-8
+-- //password is manually hashed using 1-8
 
 ALTER TABLE Student ADD COLUMN is_approved BOOLEAN DEFAULT FALSE;
 
