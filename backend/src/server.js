@@ -2,6 +2,7 @@ import express from "express"
 import dotenv from "dotenv"
 import pool from "./config/db.js"
 import cors from "cors"
+import path from "path"
 
 // Routes Import
 import authRouter from "./routes/authRoutes.js"
@@ -27,6 +28,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json())
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")))
 
 
 app.get("/", (req, res) => {

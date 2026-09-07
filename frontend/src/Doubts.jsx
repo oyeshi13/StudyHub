@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doubtService } from './services/doubtService';
 
 
 const user = JSON.parse(localStorage.getItem('user'));
@@ -22,6 +21,8 @@ export default function Doubts() {
   // Form State
   const [isAsking, setIsAsking] = useState(false);
   const [formData, setFormData] = useState({ courseId: '', title: '', description: '', tags: '' });
+  const [attachments, setAttachments] = useState([]);
+  const attachmentInputRef = useRef(null);
 
   // Fetch Data on Load or Filter Change
   useEffect(() => {
@@ -74,24 +75,28 @@ export default function Doubts() {
     
     try {
       setLoading(true);
-      const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-      //await doubtService.createDoubt({ ...formData, tags: tagsArray });
+      const requestData = new FormData();
+      requestData.append('course_code', formData.courseId);
+      requestData.append('title', formData.title);
+      requestData.append('description', formData.description);
+      requestData.append('author', user.student_id);
+      attachments.forEach(file => requestData.append('attachments', file));
 
-      await fetch("http://localhost:5000/doubts/post-doubt",{
+      const response = await fetch("http://localhost:5000/doubts/post-doubt", {
         method: "POST",
-        body : JSON.stringify({
-          
-        })
-      })
-      
-      // Reload feed
-      const updatedDoubts = await doubtService.getDoubts({ search: searchQuery, courseId: selectedCourseId, sort: sortBy });
-      setDoubts(updatedDoubts);
+        body: requestData
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to post doubt.");
+
+      setDoubts(previousDoubts => [data.doubt, ...previousDoubts]);
       
       setFormData({ courseId: '', title: '', description: '', tags: '' });
+      setAttachments([]);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = '';
       setIsAsking(false);
     } catch (err) {
-      setError("Failed to post doubt.");
+      setError(err.message || "Failed to post doubt.");
     } finally {
       setLoading(false);
     }
@@ -180,7 +185,15 @@ export default function Doubts() {
             </div>
             
             <div className="flex items-center justify-between mt-8 pt-5 border-t border-[#EBDDD0]">
-              <button type="button" className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2 rounded-xl transition-colors">
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx"
+                className="hidden"
+                onChange={event => setAttachments(Array.from(event.target.files).slice(0, 5))}
+              />
+              <button type="button" onClick={() => attachmentInputRef.current?.click()} className="flex items-center space-x-2 text-xs font-extrabold text-[#3B3633]/50 hover:text-[#3B3633] hover:bg-[#EBDDD0]/50 px-4 py-2 rounded-xl transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                 <span>Attach File / PDF</span>
               </button>
@@ -189,6 +202,11 @@ export default function Doubts() {
                 <button type="submit" disabled={loading} className="bg-[#262423] hover:bg-black text-[#FAF7F2] font-extrabold py-2.5 px-6 rounded-xl shadow-lg transition-transform transform hover:-translate-y-0.5 text-sm">Post Doubt</button>
               </div>
             </div>
+            {attachments.length > 0 && (
+              <p className="mt-3 text-xs font-bold text-[#3B3633]/60">
+                Attached: {attachments.map(file => file.name).join(', ')}
+              </p>
+            )}
           </form>
         )}
 
@@ -252,6 +270,21 @@ export default function Doubts() {
                     <div className="flex flex-wrap gap-2 mt-4">
                       {doubt.tags.map((tag, idx) => (
                         <span key={idx} className="bg-[#EBDDD0]/50 text-[#3B3633] text-[10px] px-3 py-1.5 rounded-lg font-extrabold uppercase tracking-wider">#{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                  {doubt.attachments?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {doubt.attachments.map(attachment => (
+                        <a
+                          key={attachment.id}
+                          href={`http://localhost:5000${attachment.fileUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-[#B3CFF3]/40 text-[#3B3633] text-xs px-3 py-1.5 rounded-lg font-extrabold hover:bg-[#B3CFF3] transition-colors"
+                        >
+                          📎 {attachment.originalName}
+                        </a>
                       ))}
                     </div>
                   )}
