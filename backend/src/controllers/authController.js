@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 // REGISTER (Only for Students)
 const register = async (req, res) => {
@@ -40,11 +41,9 @@ const register = async (req, res) => {
             return res.status(400).json({ message: "The selected department does not have a group." });
         }
 
-       
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-       
         const newStudent = await client.query(
             "INSERT INTO Student (student_id, name, email, password, department, is_approved) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING student_id, name, email, department, is_approved",
             [student_id, name, cleanEmail, hashedPassword, departmentGroup.rows[0].dept_name]
@@ -81,7 +80,7 @@ const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-
+        // 1. Admin check (Plain-text comparison)
         const adminResult = await pool.query(
             "SELECT * FROM Admin WHERE LOWER(email) = $1", 
             [cleanEmail]
@@ -91,13 +90,24 @@ const login = async (req, res) => {
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
             
-            // checking non-hashed admin pass
             if (password !== admin.password) {
                 return res.status(400).json({ message: "Invalid email or password!" });
             }
 
+            // JWT token generation for Admin
+            const token = jwt.sign(
+                { 
+                    id: admin.admin_id, 
+                    role: "admin", 
+                    email: admin.email 
+                },
+                process.env.JWT_SECRET || "studyhub_super_secret_jwt_key_2026",
+                { expiresIn: "1d" }
+            );
+
             return res.status(200).json({
                 message: "Admin login successful!",
+                token,
                 role: "admin",
                 user: {
                     admin_id: admin.admin_id,
@@ -108,7 +118,7 @@ const login = async (req, res) => {
             });
         }
 
-       
+        // 2. Student check (Bcrypt comparison)
         const studentResult = await pool.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1", 
             [cleanEmail]
@@ -128,8 +138,20 @@ const login = async (req, res) => {
                 });
             }
 
+            // JWT token generation for Student
+            const token = jwt.sign(
+                { 
+                    student_id: student.student_id, 
+                    role: "student", 
+                    email: student.email 
+                },
+                process.env.JWT_SECRET || "studyhub_super_secret_jwt_key_2026",
+                { expiresIn: "1d" }
+            );
+
             return res.status(200).json({
                 message: "Student login successful!",
+                token,
                 role: "student",
                 user: {
                     student_id: student.student_id,
@@ -141,7 +163,7 @@ const login = async (req, res) => {
             });
         }
 
-        // if cant find user
+        // User not found
         return res.status(400).json({ message: "Invalid email or password!" });
 
     } catch (err) {
@@ -186,6 +208,5 @@ const approveStudent = async (req, res) => {
         res.status(500).json({ error: "Server Error: " + err.message });
     }
 };
-
 
 export { register, login, getPendingStudents, approveStudent };
