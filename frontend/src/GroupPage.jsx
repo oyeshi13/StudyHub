@@ -179,31 +179,35 @@ export default function GroupPage() {
     return <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center font-extrabold text-[#3B3633] text-2xl">Department Not Found</div>;
   }
 
-  // Handle Post Creation with FormData
- const submitPost = async () => {
+  // Handle Post Creation with FormData and JWT Authorization Header
+  const submitPost = async () => {
     if (!newPostData.title || !newPostData.content) {
       alert("Title and Content are required!");
       return;
     }
 
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    const studentId = storedUser?.student_id || 2405172;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Session expired or token missing. Please log in again!");
+      navigate('/login');
+      return;
+    }
 
     try {
       const formData = new FormData();
       formData.append('title', newPostData.title);
       formData.append('description', newPostData.content);
-      formData.append('student_id', studentId);
       formData.append('course_code', newPostData.course || '');
       
-      // ফাইল সিলেক্ট করা থাকলে তবেই যাবে
       if (selectedFile) {
         formData.append('attachment', selectedFile);
       }
 
-      // এখানে কোনো headers দেওয়া যাবে না!
       const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
 
@@ -379,7 +383,7 @@ export default function GroupPage() {
                 <label className="block text-xs font-extrabold text-[#3B3633]/60 uppercase tracking-wider mb-2">Content <span className="text-[#F4B7CC]">*</span></label>
                 <textarea 
                   rows="4" 
-                  placeholder="Share your question, resource, discussion, or problem..."
+                  placeholder="Share your question, resource, discussion, or problem..." 
                   value={newPostData.content}
                   onChange={(e) => setNewPostData({...newPostData, content: e.target.value})}
                   className="w-full bg-[#EBDDD0]/40 border-none rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-4 focus:ring-[#D1BCFA]/50 focus:bg-white transition-all resize-none text-sm font-bold text-[#3B3633] placeholder-[#3B3633]/40"

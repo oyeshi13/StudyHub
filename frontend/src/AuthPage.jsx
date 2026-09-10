@@ -74,6 +74,10 @@ export default function AuthPage() {
         if (isLogin) {
           setMessage({ type: 'success', text: data.message || 'Login successful!' });
           
+          // JWT Token এবং User ডেটা সেভ করা
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
           localStorage.setItem('user', JSON.stringify(data.user || data.student || data));
           localStorage.setItem('role', data.role || 'student');
           
