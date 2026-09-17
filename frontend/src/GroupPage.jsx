@@ -2,28 +2,46 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
 const CoursePost = ({ postId, author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl }) => {
-  const [votes, setVotes] = useState(initialVotes);
+  const [votes, setVotes] = useState(initialVotes || 0);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  const handleUpvote = () => {
-    if (voteStatus === 'up') {
-      setVotes(votes - 1);
-      setVoteStatus(null);
-    } else {
-      setVotes(voteStatus === 'down' ? votes + 2 : votes + 1);
-      setVoteStatus('up');
+  // Send vote request to backend
+  const sendVoteRequest = async (type) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to vote!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/votes/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ voteType: type })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data.totalVotes);
+        setVoteStatus(data.userVoteStatus);
+      } else {
+        console.error("Failed to submit vote");
+      }
+    } catch (err) {
+      console.error("Voting failed:", err);
     }
   };
 
+  const handleUpvote = () => {
+    sendVoteRequest('UP');
+  };
+
   const handleDownvote = () => {
-    if (voteStatus === 'down') {
-      setVotes(votes + 1);
-      setVoteStatus(null);
-    } else {
-      setVotes(voteStatus === 'up' ? votes - 2 : votes - 1);
-      setVoteStatus('down');
-    }
+    sendVoteRequest('DOWN');
   };
 
   const handleBookmarkToggle = async () => {
@@ -137,12 +155,10 @@ export default function GroupPage() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Filter/Sort State
   const [activeCourse, setActiveCourse] = useState('All Courses');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Newest');
   
-  // Create Post State
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [newPostData, setNewPostData] = useState({ course: '', title: '', content: '', tags: '' });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -174,9 +190,14 @@ export default function GroupPage() {
       try {
         const response = await fetch(`http://localhost:5000/groups/posts/${departmentId}`);
         const data = await response.json();
-        setPosts(data);
+        if (Array.isArray(data)) {
+          setPosts(data);
+        } else {
+          setPosts([]);
+        }
       } catch (error) {
         console.error("Failed to fetch posts", error);
+        setPosts([]);
       } finally {
         setLoading(false);
       }
@@ -191,7 +212,7 @@ export default function GroupPage() {
       try {
         const response = await fetch(`http://localhost:5000/groups/courses/${departmentId}`);
         const data = await response.json();
-        setCourses(data);
+        setCourses(Array.isArray(data) ? data : []);
       } catch (error) {
         console.log("Failed to fetch courses", error);
       } finally {
@@ -205,7 +226,6 @@ export default function GroupPage() {
     return <div className="min-h-screen bg-[#EBDDD0] flex items-center justify-center font-extrabold text-[#3B3633] text-2xl">Department Not Found</div>;
   }
 
-  // Handle Post Creation with FormData and JWT Authorization Header
   const submitPost = async () => {
     if (!newPostData.title || !newPostData.content) {
       alert("Title and Content are required!");
@@ -240,7 +260,7 @@ export default function GroupPage() {
       if (response.ok) {
         const refreshResponse = await fetch(`http://localhost:5000/groups/posts/${departmentId}`);
         const freshData = await refreshResponse.json();
-        setPosts(freshData);
+        setPosts(Array.isArray(freshData) ? freshData : []);
 
         setNewPostData({ course: '', title: '', content: '', tags: '' });
         setSelectedFile(null);
@@ -255,8 +275,7 @@ export default function GroupPage() {
     }
   };
 
-  // Filter and Sort Logic
-  let displayPosts = [...posts];
+  let displayPosts = Array.isArray(posts) ? [...posts] : [];
 
   if (activeCourse !== 'All Courses') {
     displayPosts = displayPosts.filter(p => (p.course || p.course_code) === activeCourse);
@@ -289,7 +308,6 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
-      {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-[#FAF7F2] border-b border-[#EBDDD0] px-6 h-20 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
           <button onClick={() => setIsMenuOpen(true)} className="p-2.5 rounded-xl text-[#3B3633]/70 hover:bg-[#EBDDD0]/50 transition-colors">
@@ -302,7 +320,6 @@ export default function GroupPage() {
         </div>
       </nav>
 
-      {/* Sidebar */}
       {isMenuOpen && <div className="fixed inset-0 bg-[#3B3633]/10 z-40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#FAF7F2] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-[#EBDDD0] flex items-center justify-between">
@@ -321,7 +338,6 @@ export default function GroupPage() {
       </div>
 
       <main className="max-w-3xl mx-auto pt-8 px-4 pb-20">
-        {/* GROUP HEADER */}
         <div className="bg-[#FAF7F2] rounded-[2.5rem] shadow-sm border border-[#EBDDD0] p-8 mb-8 relative overflow-hidden animate-fade-in-up">
           <button onClick={() => navigate('/groups')} className="flex items-center space-x-2 text-[#3B3633]/60 hover:text-[#3B3633] font-extrabold text-sm mb-6 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -330,7 +346,6 @@ export default function GroupPage() {
           <p className="mt-6 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">Welcome to {department.dept_name}</p>
         </div>
 
-        {/* CONTROLS */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 animate-fade-in-up">
           <div className="flex-1 w-full flex flex-col md:flex-row gap-3">
             <select 
@@ -376,7 +391,6 @@ export default function GroupPage() {
           </button>
         </div>
 
-        {/* CREATE POST FORM */}
         {isCreatingPost && (
           <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-8 animate-fade-in-up">
             <h3 className="text-lg font-extrabold text-[#3B3633] mb-4 tracking-tight">Create a New Post</h3>
@@ -485,7 +499,6 @@ export default function GroupPage() {
           </div>
         )}
 
-        {/* FEED LOOP */}
         <div>
           {displayPosts.length > 0 ? displayPosts.map((post, idx) => (
             <div key={post.resource_id || post.id || idx} className="animate-fade-in-up">
