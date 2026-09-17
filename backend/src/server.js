@@ -5,6 +5,7 @@ import cors from "cors"
 import path from "path"
 
 // Routes Import
+import bookmarkRoutes from "./routes/bookmarkRoutes.js";
 import authRouter from "./routes/authRoutes.js"
 import departmentRouter from "./routes/departmentRoutes.js"
 import groupRouter from "./routes/groupRoutes.js"
@@ -63,6 +64,7 @@ app.use("/api/auth", authRouter);
 // Other Routes
 app.use("/getAllDept",getAllDept)
 
+app.use("/api/bookmarks", bookmarkRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)

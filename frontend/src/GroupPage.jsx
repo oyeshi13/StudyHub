@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const CoursePost = ({ author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl }) => {
+const CoursePost = ({ postId, author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl }) => {
   const [votes, setVotes] = useState(initialVotes);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -23,6 +23,32 @@ const CoursePost = ({ author, course, title, time, content, initialVotes, tags, 
     } else {
       setVotes(voteStatus === 'up' ? votes - 2 : votes - 1);
       setVoteStatus('down');
+    }
+  };
+
+  const handleBookmarkToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to save posts!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/bookmarks/toggle/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsBookmarked(data.bookmarked);
+      } else {
+        console.error("Failed to toggle bookmark");
+      }
+    } catch (err) {
+      console.error("Bookmark error:", err);
     }
   };
 
@@ -97,7 +123,7 @@ const CoursePost = ({ author, course, title, time, content, initialVotes, tags, 
           <span className="text-sm font-extrabold hidden sm:inline">{commentsCount} Comments</span>
         </button>
 
-        <button onClick={() => setIsBookmarked(!isBookmarked)} className={`flex items-center space-x-2 transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50 ${isBookmarked ? 'text-[#3B3633]' : 'text-[#3B3633]/60 hover:text-[#3B3633]'}`}>
+        <button onClick={handleBookmarkToggle} className={`flex items-center space-x-2 transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50 ${isBookmarked ? 'text-[#3B3633]' : 'text-[#3B3633]/60 hover:text-[#3B3633]'}`}>
           <svg className="w-5 h-5" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
           <span className="text-sm font-extrabold hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
         </button>
@@ -288,6 +314,9 @@ export default function GroupPage() {
         <div className="p-4 flex-1 overflow-y-auto space-y-1.5">
           <Link to="/dashboard" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 font-extrabold transition-colors"><span className="text-xl">🏠</span> <span>Home Feed</span></Link>
           <Link to="/groups" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl bg-[#EBDDD0]/50 text-[#3B3633] font-extrabold"><span className="text-xl">🤝</span> <span>My Groups</span></Link>
+          <Link to="/doubts" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors"><span className="text-xl">❓</span> <span>Doubts & Q&A</span></Link>
+          <Link to="/bookmarks" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors"><span className="text-xl">🔖</span> <span>Bookmarked</span></Link>
+          <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors"><span className="text-xl">👤</span> <span>Profile</span></Link>
         </div>
       </div>
 
@@ -461,6 +490,7 @@ export default function GroupPage() {
           {displayPosts.length > 0 ? displayPosts.map((post, idx) => (
             <div key={post.resource_id || post.id || idx} className="animate-fade-in-up">
               <CoursePost 
+                postId={post.resource_id || post.id}
                 author={post.author}
                 course={post.course || post.course_code}
                 title={post.title}

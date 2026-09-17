@@ -10,6 +10,7 @@ import Doubts from './Doubts';
 import DoubtDetails from './DoubtDetails';
 import ExploreDepartments from './ExploreDepartments';
 import AdminDashboard from "./AdminDashboard";
+import BookmarkedPosts from './BookmarkedPosts';
 
 function App() {
   return (
@@ -24,7 +25,7 @@ function App() {
       <Route path="/doubts/:doubtId" element={<DoubtDetails />} />
       <Route path="/explore-departments" element={<ExploreDepartments />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
+      <Route path="/bookmarks" element={<BookmarkedPosts />} />
     </Routes>
   );
 }
