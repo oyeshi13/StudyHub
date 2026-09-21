@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 // ==========================================
 // 1. REUSABLE POST COMPONENT
 // ==========================================
-const Post = ({ author, group, time, content, initialVotes, tags }) => {
+const Post = ({ author, group, time, title, content, initialVotes, tags }) => {
   const [votes, setVotes] = useState(initialVotes);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -69,6 +69,7 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
       </div>
 
       <div className="mb-5">
+        {title && <h3 className="text-xl font-extrabold text-[#3B3633] mb-2 tracking-tight">{title}</h3>}
         <p className="text-[#3B3633]/80 text-sm leading-relaxed whitespace-pre-wrap font-bold">{content}</p>
         {tags && (
           <div className="flex flex-wrap gap-2 mt-4">
@@ -123,7 +124,8 @@ const Post = ({ author, group, time, content, initialVotes, tags }) => {
 export default function UserDashboard() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [postText, setPostText] = useState('');
+  const [feedPosts, setFeedPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   
   const handleLogout = () => {
@@ -134,35 +136,35 @@ export default function UserDashboard() {
     navigate('/login');
   };
 
-  const feedPosts = [
-    {
-      id: 1,
-      author: 'Fabiha Ishrah',
-      group: 'Data Structures & Algorithms',
-      time: '2 hours ago',
-      content: 'I have my DSA exams upcoming today! I want to share this quick guide I wrote on dynamic programming and graph theory. I tried learning it before and everything seemed very difficult to solve, but breaking down the base cases really helps.',
-      initialVotes: 42,
-      tags: ['DP', 'GraphTheory', 'ExamPrep']
-    },
-    {
-      id: 2,
-      author: 'Alex Chen',
-      group: 'Engineering Mechanics',
-      time: '5 hours ago',
-      content: 'Can someone explain the rigid body equilibrium equations for this assignment? I have my term finals coming and I have only one day to review the mechanical syllabus. Specifically struggling with structural joints.',
-      initialVotes: 15,
-      tags: ['Statics', 'Finals']
-    },
-    {
-      id: 3,
-      author: 'Sarah Jenkins',
-      group: 'Mathematics Hub',
-      time: '1 day ago',
-      content: 'Just uploaded my notes on linear transformations in LA! It covers matrix properties, vector spaces, and a few solved examples from last week\'s lecture.',
-      initialVotes: 128,
-      tags: ['LinearAlgebra', 'Notes']
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!user?.student_id) {
+      setIsLoading(false);
+      return;
     }
-  ];
+
+    const fetchFeedPosts = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/groups/posts/student/${user.student_id}`);
+        const data = await response.json();
+        setFeedPosts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch feed posts", error);
+        setFeedPosts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeedPosts();
+  }, []);
+
+  const formatTime = (dateValue) => {
+    const hours = Math.floor(Math.abs(new Date() - new Date(dateValue)) / 36e5);
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return `${hours} hours ago`;
+    return `${Math.floor(hours / 24)} days ago`;
+  };
 
   return (
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
@@ -250,15 +252,17 @@ export default function UserDashboard() {
       <main className="max-w-2xl mx-auto pt-8 px-4 pb-20">
         <div>
           <h2 className="text-[11px] font-extrabold text-[#3B3633]/50 mb-5 uppercase tracking-widest pl-2">Your Feed</h2>
-          {feedPosts.map((post) => (
+          {isLoading ? <p className="text-center font-bold text-[#3B3633]/60">Loading your group posts...</p> : feedPosts.length === 0 ? (
+            <p className="text-center font-bold text-[#3B3633]/60">No posts from your joined groups yet.</p>
+          ) : feedPosts.map((post) => (
             <Post 
-              key={post.id}
-              author={post.author}
+              key={post.resource_id || post.id}
+              author={post.author || 'Student'}
               group={post.group}
-              time={post.time}
-              content={post.content}
-              initialVotes={post.initialVotes}
-              tags={post.tags}
+              time={formatTime(post.createdAt)}
+              title={post.title}
+              content={post.content || post.description}
+              initialVotes={post.initialVotes || 0}
             />
           ))}
         </div>
