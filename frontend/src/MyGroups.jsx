@@ -78,6 +78,9 @@ export default function MyGroups() {
             <Link to="/doubts" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
                 <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
             </Link>
+            <Link to="/bookmarks" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+              <span className="text-xl">🔖</span> <span>Bookmarked</span>
+            </Link>
             <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
                 <span className="text-xl">👤</span> <span>Profile</span>
             </Link>
@@ -114,8 +117,8 @@ export default function MyGroups() {
                   </span>
                 </div>
                 
-                <h3 className="text-2xl font-extrabold text-[#3B3633] tracking-tight">{dept.code}</h3>
-                <h4 className="text-sm font-extrabold text-[#3B3633]/60 mb-4">{dept.name}</h4>
+                <h3 className="text-2xl font-extrabold text-[#3B3633] tracking-tight">{dept.group_name || dept.dept_name}</h3>
+                <h4 className="text-sm font-extrabold text-[#3B3633]/60 mb-4">{dept.dept_name}</h4>
                 
                 <p className="text-[#3B3633]/80 text-sm leading-relaxed font-bold mb-6">
                   {dept.description}

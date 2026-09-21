@@ -227,6 +227,9 @@ export default function UserDashboard() {
           <Link to="/doubts" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">❓</span> <span>Doubts & Q&A</span>
           </Link>
+          <Link to="/bookmarks" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
+            <span className="text-xl">🔖</span> <span>Bookmarked</span>
+          </Link>
           <Link to="/profile" className="flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-[#3B3633]/60 hover:bg-[#EBDDD0]/30 hover:text-[#3B3633] font-extrabold transition-colors">
             <span className="text-xl">👤</span> <span>Profile</span>
           </Link>

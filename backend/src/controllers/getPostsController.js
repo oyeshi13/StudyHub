@@ -15,7 +15,8 @@ const getPostsController = async (req, res) => {
                 r.file_type,
                 r.created_at AS "createdAt",
                 COALESCE(s.name, 'Student') AS author,
-                COALESCE(SUM(CASE WHEN v.vote_type = 'UP' THEN 1 WHEN v.vote_type = 'DOWN' THEN -1 ELSE 0 END), 0)::INT AS "initialVotes"
+                COALESCE(SUM(CASE WHEN v.vote_type = 'UP' THEN 1 WHEN v.vote_type = 'DOWN' THEN -1 ELSE 0 END), 0)::INT AS "initialVotes",
+                (SELECT COUNT(*)::INT FROM RESOURCE_COMMENTS c WHERE c.resource_id = r.resource_id) AS "commentsCount"
              FROM RESOURCES r
              LEFT JOIN STUDENT s ON r.uploaded_by = s.student_id
              LEFT JOIN VOTES v ON r.resource_id = v.resource_id

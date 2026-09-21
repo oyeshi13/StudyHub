@@ -5,6 +5,11 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
   const [votes, setVotes] = useState(initialVotes || 0);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentCount, setCommentCount] = useState(commentsCount || 0);
 
   // Send vote request to backend
   const sendVoteRequest = async (type) => {
@@ -67,6 +72,50 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
       }
     } catch (err) {
       console.error("Bookmark error:", err);
+    }
+  };
+
+  const loadComments = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/comments/${postId}`);
+      if (res.ok) setComments(await res.json());
+    } catch (err) {
+      console.error("Comments failed:", err);
+    }
+  };
+
+  const handleCommentsToggle = () => {
+    const nextOpen = !isCommentsOpen;
+    setIsCommentsOpen(nextOpen);
+    if (nextOpen) loadComments();
+  };
+
+  const submitComment = async (event) => {
+    event.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to comment!");
+      return;
+    }
+    if (!commentText.trim()) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/comments/${postId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ commentText })
+      });
+      if (res.ok) {
+        const newComment = await res.json();
+        setComments((current) => [...current, newComment]);
+        setCommentCount((count) => count + 1);
+        setCommentText('');
+      }
+    } catch (err) {
+      console.error("Comment failed:", err);
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -136,9 +185,9 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
           </button>
         </div>
 
-        <button className="flex items-center space-x-2 text-[#3B3633]/60 hover:text-[#3B3633] transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50">
+        <button onClick={handleCommentsToggle} className="flex items-center space-x-2 text-[#3B3633]/60 hover:text-[#3B3633] transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-          <span className="text-sm font-extrabold hidden sm:inline">{commentsCount} Comments</span>
+          <span className="text-sm font-extrabold hidden sm:inline">{commentCount} Comments</span>
         </button>
 
         <button onClick={handleBookmarkToggle} className={`flex items-center space-x-2 transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50 ${isBookmarked ? 'text-[#3B3633]' : 'text-[#3B3633]/60 hover:text-[#3B3633]'}`}>
@@ -146,6 +195,23 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
           <span className="text-sm font-extrabold hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
         </button>
       </div>
+
+      {isCommentsOpen && (
+        <div className="mt-4 pt-4 border-t border-[#EBDDD0]">
+          <div className="space-y-3 mb-4">
+            {comments.length > 0 ? comments.map((comment) => (
+              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2">
+                <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
+                <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+              </div>
+            )) : <p className="text-sm text-[#3B3633]/50 font-bold">No comments yet.</p>}
+          </div>
+          <form onSubmit={submitComment} className="flex gap-2">
+            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment..." className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
+            <button type="submit" disabled={isSubmittingComment} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50">{isSubmittingComment ? '...' : 'Post'}</button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
@@ -343,7 +409,8 @@ export default function GroupPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             <span>Back to Groups</span>
           </button>
-          <p className="mt-6 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">Welcome to {department.dept_name}</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#3B3633]">{department.group_name || department.dept_name}</h1>
+          <p className="mt-2 text-[#3B3633]/80 text-sm leading-relaxed font-bold max-w-2xl">{department.dept_name} study group</p>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 animate-fade-in-up">
