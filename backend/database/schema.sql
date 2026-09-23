@@ -237,3 +237,12 @@ CREATE TABLE IF NOT EXISTS COMMENT_REPORTS (
     reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_comment_report UNIQUE (student_id, comment_id)
 );
+
+CREATE TABLE IF NOT EXISTS RESOURCE_REPORTS (
+    report_id SERIAL PRIMARY KEY,
+    resource_id INT REFERENCES resources(resource_id) ON DELETE CASCADE,
+    student_id INT REFERENCES student(student_id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_resource_report UNIQUE (student_id, resource_id)
+);

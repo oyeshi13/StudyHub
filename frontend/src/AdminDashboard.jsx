@@ -5,8 +5,10 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [pendingStudents, setPendingStudents] = useState([]);
   const [reportedComments, setReportedComments] = useState([]);
+  const [reportedResources, setReportedResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(false);
+  const [loadingResourceReports, setLoadingResourceReports] = useState(false);
   const [notification, setNotification] = useState({ type: '', text: '' });
   const [adminUser, setAdminUser] = useState(null);
 
@@ -26,6 +28,7 @@ export default function AdminDashboard() {
 
     fetchPendingList();
     fetchReportedComments();
+    fetchReportedResources();
   }, [navigate]);
 
   const fetchPendingList = async () => {
@@ -60,16 +63,39 @@ export default function AdminDashboard() {
       if (res.ok) {
         setReportedComments(Array.isArray(data) ? data : []);
       } else {
-        console.error('Failed to load reports:', data.error);
+        console.error('Failed to load comment reports:', data.error);
       }
     } catch (err) {
-      console.error('Fetch reports error:', err);
+      console.error('Fetch comment reports error:', err);
     } finally {
       setLoadingReports(false);
     }
   };
 
-  // 3. Approval handling
+  // 3. Fetch reported resources (posts)
+  const fetchReportedResources = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      setLoadingResourceReports(true);
+      const res = await fetch('http://localhost:5000/api/reports/resources', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReportedResources(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Failed to load resource reports:', data.error);
+      }
+    } catch (err) {
+      console.error('Fetch resource reports error:', err);
+    } finally {
+      setLoadingResourceReports(false);
+    }
+  };
+
+  // 4. Student Approval handling
   const handleApprove = async (studentId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/auth/approve-student/${studentId}`, {
@@ -89,7 +115,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // 4. Delete reported comment
+  // 5. Delete reported comment
   const handleDeleteComment = async (commentId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this reported comment?");
     if (!confirmDelete) return;
@@ -116,7 +142,34 @@ export default function AdminDashboard() {
     }
   };
 
-  // 5. Logout
+  // 6. Delete reported resource (post)
+  const handleDeleteResource = async (resourceId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this reported post?");
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/resource/${resourceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setNotification({ type: 'success', text: 'Reported post deleted successfully!' });
+        setReportedResources(prev => prev.filter(r => r.resource_id !== resourceId));
+      } else {
+        setNotification({ type: 'error', text: data.error || 'Failed to delete post' });
+      }
+    } catch (err) {
+      console.error(err);
+      setNotification({ type: 'error', text: 'Error deleting resource' });
+    }
+  };
+
+  // 7. Logout
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
@@ -163,12 +216,12 @@ export default function AdminDashboard() {
             <p className="text-3xl font-black mt-2 text-[#3B3633]">{pendingStudents.length}</p>
           </div>
           <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-white/60 shadow-sm">
-            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">Reported Comments</span>
-            <p className="text-3xl font-black mt-2 text-red-600">{reportedComments.length}</p>
+            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">Reported Posts</span>
+            <p className="text-3xl font-black mt-2 text-amber-600">{reportedResources.length}</p>
           </div>
           <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-white/60 shadow-sm">
-            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">System State</span>
-            <p className="text-3xl font-black mt-2 text-green-700">Online</p>
+            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">Reported Comments</span>
+            <p className="text-3xl font-black mt-2 text-red-600">{reportedComments.length}</p>
           </div>
         </div>
 
@@ -183,80 +236,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Reported Comments Section */}
-        <section className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-red-700 flex items-center gap-2">
-                <span>🚩</span> Reported Comments Moderation
-              </h2>
-              <p className="text-xs text-[#3B3633]/60 font-medium mt-0.5">
-                Review flagged comments and remove inappropriate content.
-              </p>
-            </div>
-            <button
-              onClick={fetchReportedComments}
-              className="text-xs font-bold px-3.5 py-2 rounded-xl bg-white border border-[#3B3633]/10 hover:bg-gray-50 transition"
-            >
-              Refresh Reports
-            </button>
-          </div>
-
-          {loadingReports ? (
-            <div className="text-center py-8 text-sm font-semibold text-[#3B3633]/50">
-              Loading reports...
-            </div>
-          ) : reportedComments.length === 0 ? (
-            <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-[#3B3633]/20">
-              <p className="font-bold text-sm text-green-800">No reports!</p>
-              <p className="text-xs text-[#3B3633]/60 mt-1">All comments are clean and clear.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#3B3633]/10 text-[11px] font-bold text-[#3B3633]/50 uppercase tracking-wider">
-                    <th className="py-3 px-4">Reported Comment</th>
-                    <th className="py-3 px-4">Reason</th>
-                    <th className="py-3 px-4">Reported By</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#3B3633]/5 text-sm font-medium">
-                  {reportedComments.map((report) => (
-                    <tr key={report.report_id} className="hover:bg-white/60 transition">
-                      <td className="py-3.5 px-4 max-w-xs font-semibold text-[#3B3633]">
-                        <div className="truncate" title={report.comment_text}>
-                          "{report.comment_text}"
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-xs font-bold text-red-600">
-                        {report.reason}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/80">
-                        {report.reporter_name}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/60 whitespace-nowrap">
-                        {new Date(report.reported_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleDeleteComment(report.comment_id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
-                        >
-                          Delete Comment
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* Student Verification Queue */}
+        {/* 1. STUDENT VERIFICATION QUEUE (MOVED TO TOP) */}
         <main className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -320,6 +300,155 @@ export default function AdminDashboard() {
             </div>
           )}
         </main>
+
+        {/* 2. REPORTED RESOURCES (POSTS) MODERATION */}
+        <section className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight text-amber-700 flex items-center gap-2">
+                <span>⚠️</span> Reported Posts Moderation
+              </h2>
+              <p className="text-xs text-[#3B3633]/60 font-medium mt-0.5">
+                Review flagged posts and remove inappropriate study materials or discussions.
+              </p>
+            </div>
+            <button
+              onClick={fetchReportedResources}
+              className="text-xs font-bold px-3.5 py-2 rounded-xl bg-white border border-[#3B3633]/10 hover:bg-gray-50 transition"
+            >
+              Refresh Post Reports
+            </button>
+          </div>
+
+          {loadingResourceReports ? (
+            <div className="text-center py-8 text-sm font-semibold text-[#3B3633]/50">
+              Loading post reports...
+            </div>
+          ) : reportedResources.length === 0 ? (
+            <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-[#3B3633]/20">
+              <p className="font-bold text-sm text-green-800">No reported posts!</p>
+              <p className="text-xs text-[#3B3633]/60 mt-1">All posted resources are clear.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#3B3633]/10 text-[11px] font-bold text-[#3B3633]/50 uppercase tracking-wider">
+                    <th className="py-3 px-4">Post Title</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Reported By</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3B3633]/5 text-sm font-medium">
+                  {reportedResources.map((report) => (
+                    <tr key={report.report_id} className="hover:bg-white/60 transition">
+                      <td className="py-3.5 px-4 max-w-xs font-semibold text-[#3B3633]">
+                        <div className="font-bold text-sm truncate" title={report.resource_title}>
+                          {report.resource_title}
+                        </div>
+                        <div className="text-xs text-[#3B3633]/60 truncate" title={report.resource_description}>
+                          {report.resource_description}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-xs font-bold text-amber-700">
+                        {report.reason}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/80">
+                        {report.reporter_name}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/60 whitespace-nowrap">
+                        {new Date(report.reported_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteResource(report.resource_id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
+                        >
+                          Delete Post
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* 3. REPORTED COMMENTS MODERATION */}
+        <section className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight text-red-700 flex items-center gap-2">
+                <span>🚩</span> Reported Comments Moderation
+              </h2>
+              <p className="text-xs text-[#3B3633]/60 font-medium mt-0.5">
+                Review flagged comments and remove inappropriate remarks.
+              </p>
+            </div>
+            <button
+              onClick={fetchReportedComments}
+              className="text-xs font-bold px-3.5 py-2 rounded-xl bg-white border border-[#3B3633]/10 hover:bg-gray-50 transition"
+            >
+              Refresh Comments
+            </button>
+          </div>
+
+          {loadingReports ? (
+            <div className="text-center py-8 text-sm font-semibold text-[#3B3633]/50">
+              Loading comment reports...
+            </div>
+          ) : reportedComments.length === 0 ? (
+            <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-[#3B3633]/20">
+              <p className="font-bold text-sm text-green-800">No reported comments!</p>
+              <p className="text-xs text-[#3B3633]/60 mt-1">All comments are clean.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#3B3633]/10 text-[11px] font-bold text-[#3B3633]/50 uppercase tracking-wider">
+                    <th className="py-3 px-4">Reported Comment</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Reported By</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3B3633]/5 text-sm font-medium">
+                  {reportedComments.map((report) => (
+                    <tr key={report.report_id} className="hover:bg-white/60 transition">
+                      <td className="py-3.5 px-4 max-w-xs font-semibold text-[#3B3633]">
+                        <div className="truncate" title={report.comment_text}>
+                          "{report.comment_text}"
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-xs font-bold text-red-600">
+                        {report.reason}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/80">
+                        {report.reporter_name}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/60 whitespace-nowrap">
+                        {new Date(report.reported_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteComment(report.comment_id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
+                        >
+                          Delete Comment
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
       </div>
     </div>
