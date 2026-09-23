@@ -218,3 +218,22 @@ INSERT INTO COURSES VALUES
 
 ALTER TABLE Resources ALTER COLUMN file_url TYPE TEXT;
 ALTER TABLE Resources ALTER COLUMN file_type TYPE VARCHAR(100);
+
+------------23-09
+
+CREATE SEQUENCE IF NOT EXISTS resource_comments_comment_id_seq;
+
+ALTER TABLE resource_comments 
+ALTER COLUMN comment_id SET DEFAULT nextval('resource_comments_comment_id_seq');
+
+ALTER SEQUENCE resource_comments_comment_id_seq OWNED BY resource_comments.comment_id;
+
+
+CREATE TABLE IF NOT EXISTS COMMENT_REPORTS (
+    report_id SERIAL PRIMARY KEY,
+    comment_id INT REFERENCES resource_comments(comment_id) ON DELETE CASCADE,
+    student_id INT REFERENCES student(student_id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_comment_report UNIQUE (student_id, comment_id)
+);

@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [pendingStudents, setPendingStudents] = useState([]);
+  const [reportedComments, setReportedComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingReports, setLoadingReports] = useState(false);
   const [notification, setNotification] = useState({ type: '', text: '' });
   const [adminUser, setAdminUser] = useState(null);
 
-  // ১. pending list fetching
+  // 1. Auth check and initial fetching
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedRole = localStorage.getItem('role');
@@ -23,6 +25,7 @@ export default function AdminDashboard() {
     }
 
     fetchPendingList();
+    fetchReportedComments();
   }, [navigate]);
 
   const fetchPendingList = async () => {
@@ -43,7 +46,30 @@ export default function AdminDashboard() {
     }
   };
 
-  // ২. Approval handling
+  // 2. Fetch reported comments
+  const fetchReportedComments = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      setLoadingReports(true);
+      const res = await fetch('http://localhost:5000/api/reports/comments', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReportedComments(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Failed to load reports:', data.error);
+      }
+    } catch (err) {
+      console.error('Fetch reports error:', err);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  // 3. Approval handling
   const handleApprove = async (studentId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/auth/approve-student/${studentId}`, {
@@ -63,7 +89,34 @@ export default function AdminDashboard() {
     }
   };
 
-  // ৩. logout
+  // 4. Delete reported comment
+  const handleDeleteComment = async (commentId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this reported comment?");
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/comment/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setNotification({ type: 'success', text: 'Reported comment deleted successfully!' });
+        setReportedComments(prev => prev.filter(c => c.comment_id !== commentId));
+      } else {
+        setNotification({ type: 'error', text: data.error || 'Failed to delete comment' });
+      }
+    } catch (err) {
+      console.error(err);
+      setNotification({ type: 'error', text: 'Error deleting comment' });
+    }
+  };
+
+  // 5. Logout
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
@@ -85,7 +138,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight">StudyHub Admin</h1>
-              <p className="text-xs text-[#3B3633]/60 font-medium">Verification & Management Portal</p>
+              <p className="text-xs text-[#3B3633]/60 font-medium">Verification & Moderation Portal</p>
             </div>
           </div>
 
@@ -110,8 +163,8 @@ export default function AdminDashboard() {
             <p className="text-3xl font-black mt-2 text-[#3B3633]">{pendingStudents.length}</p>
           </div>
           <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-white/60 shadow-sm">
-            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">System Role</span>
-            <p className="text-3xl font-black mt-2 text-[#3B3633]">Super Admin</p>
+            <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">Reported Comments</span>
+            <p className="text-3xl font-black mt-2 text-red-600">{reportedComments.length}</p>
           </div>
           <div className="bg-[#FAF7F2] p-6 rounded-3xl border border-white/60 shadow-sm">
             <span className="text-xs font-bold text-[#3B3633]/60 uppercase tracking-wider">System State</span>
@@ -130,7 +183,80 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Main Content: Pending Table */}
+        {/* Reported Comments Section */}
+        <section className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight text-red-700 flex items-center gap-2">
+                <span>🚩</span> Reported Comments Moderation
+              </h2>
+              <p className="text-xs text-[#3B3633]/60 font-medium mt-0.5">
+                Review flagged comments and remove inappropriate content.
+              </p>
+            </div>
+            <button
+              onClick={fetchReportedComments}
+              className="text-xs font-bold px-3.5 py-2 rounded-xl bg-white border border-[#3B3633]/10 hover:bg-gray-50 transition"
+            >
+              Refresh Reports
+            </button>
+          </div>
+
+          {loadingReports ? (
+            <div className="text-center py-8 text-sm font-semibold text-[#3B3633]/50">
+              Loading reports...
+            </div>
+          ) : reportedComments.length === 0 ? (
+            <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-[#3B3633]/20">
+              <p className="font-bold text-sm text-green-800">No reports!</p>
+              <p className="text-xs text-[#3B3633]/60 mt-1">All comments are clean and clear.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#3B3633]/10 text-[11px] font-bold text-[#3B3633]/50 uppercase tracking-wider">
+                    <th className="py-3 px-4">Reported Comment</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Reported By</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3B3633]/5 text-sm font-medium">
+                  {reportedComments.map((report) => (
+                    <tr key={report.report_id} className="hover:bg-white/60 transition">
+                      <td className="py-3.5 px-4 max-w-xs font-semibold text-[#3B3633]">
+                        <div className="truncate" title={report.comment_text}>
+                          "{report.comment_text}"
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-xs font-bold text-red-600">
+                        {report.reason}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/80">
+                        {report.reporter_name}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-[#3B3633]/60 whitespace-nowrap">
+                        {new Date(report.reported_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteComment(report.comment_id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
+                        >
+                          Delete Comment
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Student Verification Queue */}
         <main className="bg-[#FAF7F2] rounded-3xl p-6 md:p-8 border border-white/60 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>

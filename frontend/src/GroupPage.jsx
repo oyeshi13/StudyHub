@@ -11,7 +11,11 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(commentsCount || 0);
 
-  // Send vote request to backend
+  // Reporting State
+  const [reportingCommentId, setReportingCommentId] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
   const sendVoteRequest = async (type) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -41,13 +45,8 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
     }
   };
 
-  const handleUpvote = () => {
-    sendVoteRequest('UP');
-  };
-
-  const handleDownvote = () => {
-    sendVoteRequest('DOWN');
-  };
+  const handleUpvote = () => sendVoteRequest('UP');
+  const handleDownvote = () => sendVoteRequest('DOWN');
 
   const handleBookmarkToggle = async () => {
     const token = localStorage.getItem('token');
@@ -116,6 +115,45 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
       console.error("Comment failed:", err);
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleReportCommentSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to report a comment!");
+      return;
+    }
+    if (!reportReason.trim()) {
+      alert("Please enter a reason.");
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/comment/${reportingCommentId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: reportReason })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Report submitted successfully.");
+        setReportingCommentId(null);
+        setReportReason('');
+      } else {
+        alert(data.error || "Failed to submit report.");
+      }
+    } catch (err) {
+      console.error("Report submit error:", err);
+      alert("Error submitting report.");
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
@@ -200,16 +238,76 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
         <div className="mt-4 pt-4 border-t border-[#EBDDD0]">
           <div className="space-y-3 mb-4">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2">
-                <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
-                <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2.5 flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
+                  <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+                </div>
+                <button
+                  onClick={() => setReportingCommentId(comment.comment_id)}
+                  className="text-xs font-bold text-[#3B3633]/40 hover:text-red-500 transition-colors p-1"
+                  title="Report inappropriate comment"
+                >
+                  🚩 Report
+                </button>
               </div>
             )) : <p className="text-sm text-[#3B3633]/50 font-bold">No comments yet.</p>}
           </div>
+
           <form onSubmit={submitComment} className="flex gap-2">
-            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment..." className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
-            <button type="submit" disabled={isSubmittingComment} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50">{isSubmittingComment ? '...' : 'Post'}</button>
+            <input 
+              value={commentText} 
+              onChange={(event) => setCommentText(event.target.value)} 
+              placeholder="Write a comment..." 
+              className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" 
+            />
+            <button 
+              type="submit" 
+              disabled={isSubmittingComment} 
+              className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50"
+            >
+              {isSubmittingComment ? '...' : 'Post'}
+            </button>
           </form>
+        </div>
+      )}
+
+      {/* REPORT COMMENT MODAL */}
+      {reportingCommentId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FAF7F2] border border-[#EBDDD0] rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <h3 className="font-extrabold text-[#3B3633] text-lg mb-2">Report Inappropriate Comment</h3>
+            <p className="text-xs text-[#3B3633]/70 font-semibold mb-4">Please provide a brief reason why this comment violates guidelines:</p>
+            <form onSubmit={handleReportCommentSubmit}>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="e.g. Spam, offensive language, harassment..."
+                rows="3"
+                className="w-full bg-white border border-[#EBDDD0] rounded-xl p-3 text-sm font-medium text-[#3B3633] focus:outline-none focus:ring-2 focus:ring-red-400 mb-4 resize-none"
+                required
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportingCommentId(null);
+                    setReportReason('');
+                  }}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl border border-[#EBDDD0] text-[#3B3633] hover:bg-[#EBDDD0]/50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReport}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
