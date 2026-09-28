@@ -17,3 +17,10 @@ export const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized: Invalid or expired token." });
   }
 };
+
+export const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ message: "Forbidden: Your account does not have access to this action." });
+  }
+  next();
+};

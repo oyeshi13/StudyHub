@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { apiFetch as fetch } from './services/api.js';
 
 const CoursePost = ({ postId, author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl, onReportPost }) => {
   const [votes, setVotes] = useState(initialVotes || 0);

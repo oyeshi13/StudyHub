@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { withTransaction } from "../utils/withTransaction.js";
 
 export const getComments = async (req, res) => {
 	try {
@@ -29,22 +30,23 @@ export const createComment = async (req, res) => {
 			return res.status(400).json({ message: "Comment cannot be empty." });
 		}
 
-		const result = await pool.query(
-			`INSERT INTO RESOURCE_COMMENTS (comment_text, resource_id, author)
-			 VALUES ($1, $2, $3)
-			 RETURNING comment_id, comment_text, commented_at`,
-			[commentText, resourceId, studentId]
-		);
-
-		const comment = result.rows[0];
-		const authorResult = await pool.query(
-			"SELECT COALESCE(name, 'Student') AS author FROM STUDENT WHERE student_id = $1",
-			[studentId]
-		);
+		const commentResult = await withTransaction(pool, async (client) => {
+			const result = await client.query(
+				`INSERT INTO RESOURCE_COMMENTS (comment_text, resource_id, author)
+				 VALUES ($1, $2, $3)
+				 RETURNING comment_id, comment_text, commented_at`,
+				[commentText, resourceId, studentId]
+			);
+			const authorResult = await client.query(
+				"SELECT COALESCE(name, 'Student') AS author FROM STUDENT WHERE student_id = $1",
+				[studentId]
+			);
+			return { comment: result.rows[0], author: authorResult.rows[0]?.author || "Student" };
+		});
 
 		res.status(201).json({
-			...comment,
-			author: authorResult.rows[0]?.author || "Student"
+			...commentResult.comment,
+			author: commentResult.author
 		});
 	} catch (error) {
 		console.error("Create comment error:", error);

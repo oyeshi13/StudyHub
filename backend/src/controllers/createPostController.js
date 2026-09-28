@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { withTransaction } from "../utils/withTransaction.js";
 
 const createPostController = async (req, res) => {
     try {
@@ -24,7 +25,7 @@ const createPostController = async (req, res) => {
             departmentId
         ];
 
-        const result = await pool.query(query, values);
+        const result = await withTransaction(pool, (client) => client.query(query, values));
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error("Create Post Error:", err);

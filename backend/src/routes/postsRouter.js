@@ -2,7 +2,7 @@ import express from "express";
 import upload from "../middleware/postUploadMiddleware.js";
 import getPostsController from "../controllers/getPostsController.js";
 import createPostController from "../controllers/createPostController.js";
-import { verifyToken } from "../middleware/authmiddleware.js";
+import { verifyToken, requireRole } from "../middleware/authmiddleware.js";
 
 const getPosts = express.Router();
 
@@ -12,6 +12,7 @@ getPosts.get("/:departmentId", getPostsController);
 getPosts.post(
   "/:departmentId",
   verifyToken,
+  requireRole("student"),
   (req, res, next) => {
     upload.single("attachment")(req, res, (err) => {
       if (err) {

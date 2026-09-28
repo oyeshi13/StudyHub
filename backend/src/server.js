@@ -21,6 +21,7 @@ import getAllDoubtsRoute from "./routes/getAllDoubtsRouter.js"
 import postDoubtRoute from "./routes/postDoubtRouter.js"
 import getAllDept from "./routes/getAllDeptRouter.js"
 import doubtDetailsRoute from "./routes/doubtDetailsRoutes.js"
+import { verifyToken } from "./middleware/authmiddleware.js"
 
 dotenv.config()
 
@@ -40,6 +41,10 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")))
 app.get("/", (req, res) => {
     res.send("Hello from backend")
 })
+
+app.use("/api/auth", authRouter)
+app.use("/getAllDept", getAllDept)
+app.use(verifyToken)
 
 app.use(`/explore-departments`,departmentRouter)
 
@@ -61,12 +66,7 @@ app.use("/doubts/courses/getDoubts",getAllDoubtsRoute)
 app.use("/doubts/post-doubt",postDoubtRoute)
 app.use("/doubts", doubtDetailsRoute)
 
-// AUTH ROUTE
-app.use("/api/auth", authRouter);
-
 // Other Routes
-app.use("/getAllDept",getAllDept)
-
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/comments", commentRoutes);

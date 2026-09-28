@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { withTransaction } from "../utils/withTransaction.js";
 
 // bookmark toggle
 export const toggleBookmark = async (req, res) => {
@@ -6,16 +7,23 @@ export const toggleBookmark = async (req, res) => {
   const { resourceId } = req.params;
 
   try {
-    const checkQuery = `SELECT * FROM BOOKMARKS WHERE student_id = $1 AND resource_id = $2;`;
-    const checkResult = await pool.query(checkQuery, [studentId, resourceId]);
-
-    if (checkResult.rows.length > 0) {
-      await pool.query(`DELETE FROM BOOKMARKS WHERE student_id = $1 AND resource_id = $2;`, [studentId, resourceId]);
-      return res.status(200).json({ bookmarked: false, message: "Bookmark removed" });
-    } else {
-      await pool.query(`INSERT INTO BOOKMARKS (student_id, resource_id) VALUES ($1, $2);`, [studentId, resourceId]);
-      return res.status(201).json({ bookmarked: true, message: "Bookmark added" });
-    }
+    const bookmarked = await withTransaction(pool, async (client) => {
+      await client.query("SELECT student_id FROM STUDENT WHERE student_id = $1 FOR UPDATE", [studentId]);
+      const existing = await client.query(
+        "SELECT 1 FROM BOOKMARKS WHERE student_id = $1 AND resource_id = $2",
+        [studentId, resourceId]
+      );
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM BOOKMARKS WHERE student_id = $1 AND resource_id = $2", [studentId, resourceId]);
+        return false;
+      }
+      await client.query("INSERT INTO BOOKMARKS (student_id, resource_id) VALUES ($1, $2)", [studentId, resourceId]);
+      return true;
+    });
+    return res.status(bookmarked ? 201 : 200).json({
+      bookmarked,
+      message: bookmarked ? "Bookmark added" : "Bookmark removed"
+    });
   } catch (error) {
     console.error("Toggle bookmark error:", error);
     return res.status(500).json({ error: "Database error while toggling bookmark" });

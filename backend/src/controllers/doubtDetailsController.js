@@ -1,4 +1,5 @@
 import pool from "../config/db.js"
+import { withTransaction } from "../utils/withTransaction.js";
 
 const getDoubt = async (req, res) => {
     const doubtId = Number(req.params.doubtId)
@@ -80,14 +81,15 @@ const getAnswers = async (req, res) => {
 
 const postAnswer = async (req, res) => {
     const doubtId = Number(req.params.doubtId)
-    const { content, author } = req.body
+    const { content } = req.body
+    const author = req.user.student_id
 
-    if (!Number.isInteger(doubtId) || !Number.isInteger(Number(author)) || !content?.trim()) {
+    if (!Number.isInteger(doubtId) || !Number.isInteger(author) || !content?.trim()) {
         return res.status(400).json({ message: "Doubt, answer, and author are required." })
     }
 
     try {
-        const result = await pool.query(
+        const result = await withTransaction(pool, (client) => client.query(
             `INSERT INTO ANSWERS (doubt_id, answer_text, author)
              SELECT $1, $2, s.student_id
              FROM STUDENT s
@@ -95,8 +97,8 @@ const postAnswer = async (req, res) => {
              WHERE s.student_id = $3
              RETURNING answer_id AS id, doubt_id AS "doubtId", answer_text AS content,
                        author AS "authorId", answered_at AS "createdAt"`,
-            [doubtId, content.trim(), Number(author)]
-        )
+            [doubtId, content.trim(), author]
+        ))
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Doubt or student not found." })

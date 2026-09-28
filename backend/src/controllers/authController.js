@@ -1,6 +1,7 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { withTransaction } from "../utils/withTransaction.js";
 
 // REGISTER (Only for Students)
 const register = async (req, res) => {
@@ -18,7 +19,7 @@ const register = async (req, res) => {
         await client.query("BEGIN");
 
         // checking duplicate account 
-        const existingStudent = await pool.query(
+        const existingStudent = await client.query(
             "SELECT * FROM Student WHERE LOWER(email) = $1 OR student_id = $2",
             [cleanEmail, student_id]
         );
@@ -28,30 +29,16 @@ const register = async (req, res) => {
             return res.status(400).json({ message: "Student ID or Email already exists!" });
         }
 
-        const departmentGroup = await client.query(
-            `SELECT d.dept_name, dg.group_id
-             FROM DEPARTMENTS d
-             JOIN DEPT_GROUPS dg ON dg.dept_code = d.dept_code
-             WHERE LOWER(TRIM(d.dept_name)) = LOWER(TRIM($1))`,
-            [cleanDepartment]
-        );
-
-        if (departmentGroup.rows.length === 0) {
-            await client.query("ROLLBACK");
-            return res.status(400).json({ message: "The selected department does not have a group." });
-        }
-
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newStudent = await client.query(
-            "INSERT INTO Student (student_id, name, email, password, department, is_approved) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING student_id, name, email, department, is_approved",
-            [student_id, name, cleanEmail, hashedPassword, departmentGroup.rows[0].dept_name]
-        );
-
         await client.query(
-            "INSERT INTO JOINED_GROUPS (student_id, group_id) VALUES ($1, $2)",
-            [student_id, departmentGroup.rows[0].group_id]
+            "CALL enroll_new_student($1, $2, $3, $4, $5)",
+            [student_id, name, cleanEmail, hashedPassword, cleanDepartment]
+        );
+        const newStudent = await client.query(
+            "SELECT student_id, name, email, department, is_approved FROM Student WHERE student_id = $1",
+            [student_id]
         );
         await client.query("COMMIT");
 
@@ -63,6 +50,12 @@ const register = async (req, res) => {
     } catch (err) {
         if (client) await client.query("ROLLBACK").catch(() => {});
         console.error("Register Error:", err.message);
+        if (err.code === "P0002") {
+            return res.status(400).json({ message: "The selected department does not have a group." });
+        }
+        if (err.code === "23505") {
+            return res.status(400).json({ message: "Student ID or Email already exists!" });
+        }
         res.status(500).json({ error: "Server Error: " + err.message });
     } finally {
         client?.release();
@@ -190,10 +183,10 @@ const approveStudent = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query(
-            "UPDATE Student SET is_approved = TRUE WHERE student_id = $1 RETURNING *",
+        const result = await withTransaction(pool, (client) => client.query(
+            "UPDATE Student SET is_approved = TRUE WHERE student_id = $1 RETURNING student_id, name, email, department, is_approved",
             [id]
-        );
+        ));
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Student not found!" });

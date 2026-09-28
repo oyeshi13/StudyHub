@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiFetch as fetch } from './services/api.js';
 
 // ==========================================
 // 1. REUSABLE POST COMPONENT
 // ==========================================
-const Post = ({ postId, author, group, time, title, content, initialVotes, tags, commentsCount }) => {
+const Post = ({ postId, author, group, time, title, content, initialVotes, tags, commentsCount, fileUrl }) => {
   const [votes, setVotes] = useState(initialVotes);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -15,23 +16,66 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(commentsCount || 0);
 
-  const handleUpvote = () => {
-    if (voteStatus === 'up') {
-      setVotes(votes - 1);
-      setVoteStatus(null);
-    } else {
-      setVotes(voteStatus === 'down' ? votes + 2 : votes + 1);
-      setVoteStatus('up');
+  const sendVoteRequest = async (type) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to vote!");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/votes/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ voteType: type })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVotes(data.totalVotes);
+        setVoteStatus(data.userVoteStatus);
+      } else {
+        console.error("Failed to submit vote");
+      }
+    } catch (error) {
+      console.error("Voting failed:", error);
     }
   };
 
+  const handleUpvote = () => {
+    sendVoteRequest('UP');
+  };
+
   const handleDownvote = () => {
-    if (voteStatus === 'down') {
-      setVotes(votes + 1);
-      setVoteStatus(null);
-    } else {
-      setVotes(voteStatus === 'up' ? votes - 2 : votes - 1);
-      setVoteStatus('down');
+    sendVoteRequest('DOWN');
+  };
+
+  const handleBookmarkToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to save posts!");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/bookmarks/toggle/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsBookmarked(data.bookmarked);
+      } else {
+        console.error("Failed to toggle bookmark");
+      }
+    } catch (error) {
+      console.error("Bookmark error:", error);
     }
   };
 
@@ -126,6 +170,19 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
       <div className="mb-5">
         {title && <h3 className="text-xl font-extrabold text-[#3B3633] mb-2 tracking-tight">{title}</h3>}
         <p className="text-[#3B3633]/80 text-sm leading-relaxed whitespace-pre-wrap font-bold">{content}</p>
+        {fileUrl && fileUrl !== 'N/A' && (
+          <div className="mt-4">
+            <a 
+              href={`http://localhost:5000${fileUrl}`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="inline-flex items-center space-x-2 bg-[#EBDDD0]/50 hover:bg-[#EBDDD0] text-[#3B3633] text-xs font-extrabold px-4 py-2.5 rounded-xl transition-colors border border-[#3B3633]/10"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span>View Attachment</span>
+            </a>
+          </div>
+        )}
         {tags && (
           <div className="flex flex-wrap gap-2 mt-4">
             {tags.map((tag, idx) => (
@@ -162,7 +219,7 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
         </button>
 
         <button 
-          onClick={() => setIsBookmarked(!isBookmarked)}
+          onClick={handleBookmarkToggle}
           className={`flex items-center space-x-2 transition-colors px-4 py-2 rounded-xl hover:bg-[#EBDDD0]/50 ${isBookmarked ? 'text-[#3B3633]' : 'text-[#3B3633]/60 hover:text-[#3B3633]'}`}
         >
           <svg className="w-5 h-5" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
@@ -335,6 +392,7 @@ export default function UserDashboard() {
               time={formatTime(post.createdAt)}
               title={post.title}
               content={post.content || post.description}
+              fileUrl={post.file_url}
               initialVotes={post.initialVotes || 0}
               tags={post.tags}
               commentsCount={post.commentsCount || 0}

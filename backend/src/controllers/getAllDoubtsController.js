@@ -1,7 +1,6 @@
 import pool from "../config/db.js"
 
 const getAllCoursesDoubts = (async (req,res)=>{
-    const {student_id} = req.params
     try{
         const result = await pool.query(
             `SELECT d.doubt_id AS id, d.title, d.description,
@@ -12,13 +11,10 @@ const getAllCoursesDoubts = (async (req,res)=>{
              FROM DOUBTS d
              JOIN STUDENT s ON s.student_id = d.author
              JOIN COURSES c ON c.course_code = d.course_code
-             JOIN DEPT_GROUPS dg ON dg.dept_code = c.dept_code
-             JOIN JOINED_GROUPS jg ON jg.group_id = dg.group_id
              LEFT JOIN ANSWERS a ON a.doubt_id = d.doubt_id
-             WHERE jg.student_id = $1
              GROUP BY d.doubt_id, s.name
              ORDER BY "createdAt" DESC`,
-            [student_id]
+            []
         )
 
         const doubts = result.rows
@@ -51,12 +47,12 @@ const getAllCoursesDoubts = (async (req,res)=>{
             }
         }
 
-        res.send(doubts)
+        res.json(doubts)
 
 
     }catch(err){
         console.log(err)
-        res.status(500).send("couldn't get doubts")
+        res.status(500).json({ message: "Couldn't get doubts." })
     }
 })
 

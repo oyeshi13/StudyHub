@@ -45,7 +45,7 @@ export const getReportedComments = async (req, res) => {
         cr.comment_id,
         cr.reason,
         cr.reported_at,
-        c.content AS comment_text,
+        c.comment_text AS comment_text,
         s.name AS reporter_name
       FROM COMMENT_REPORTS cr
       JOIN resource_comments c ON cr.comment_id = c.comment_id
