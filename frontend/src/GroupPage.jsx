@@ -11,6 +11,9 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(commentsCount || 0);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Comment Reporting State
@@ -91,32 +94,43 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
     if (nextOpen) loadComments();
   };
 
-  const submitComment = async (event) => {
+  const submitComment = async (event, parentCommentId = null) => {
     event.preventDefault();
     const token = localStorage.getItem('token');
     if (!token) {
       alert("Please log in to comment!");
       return;
     }
-    if (!commentText.trim()) return;
+    const text = parentCommentId ? replyText : commentText;
+    if (!text.trim()) return;
 
-    setIsSubmittingComment(true);
+    if (parentCommentId) setIsSubmittingReply(true);
+    else setIsSubmittingComment(true);
     try {
       const res = await fetch(`http://localhost:5000/api/comments/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ commentText })
+        body: JSON.stringify({ commentText: text, parentCommentId })
       });
       if (res.ok) {
         const newComment = await res.json();
         setComments((current) => [...current, newComment]);
         setCommentCount((count) => count + 1);
-        setCommentText('');
+        if (parentCommentId) {
+          setReplyText('');
+          setReplyingTo(null);
+        } else {
+          setCommentText('');
+        }
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Could not post comment.');
       }
     } catch (err) {
       console.error("Comment failed:", err);
     } finally {
       setIsSubmittingComment(false);
+      setIsSubmittingReply(false);
     }
   };
 
@@ -260,18 +274,24 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
         <div className="mt-4 pt-4 border-t border-[#EBDDD0]">
           <div className="space-y-3 mb-4">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2.5 flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
-                  <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+              <div key={comment.comment_id} className={`bg-white/70 rounded-xl px-3 py-2.5 ${comment.parent_comment_id ? 'ml-6 border-l-2 border-[#B3CFF3]' : ''}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
+                    <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-3">
+                    <button type="button" onClick={() => { setReplyingTo(comment.comment_id); setReplyText(''); }} className="text-xs font-bold text-[#3B3633]/50 hover:text-[#3B3633]">Reply</button>
+                    <button type="button" onClick={() => setReportingCommentId(comment.comment_id)} className="text-xs font-bold text-red-500/70 hover:text-red-600" title="Report inappropriate comment">Report</button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setReportingCommentId(comment.comment_id)}
-                  className="text-xs font-bold text-[#3B3633]/40 hover:text-red-500 transition-colors p-1"
-                  title="Report inappropriate comment"
-                >
-                  🚩 Report
-                </button>
+                {replyingTo === comment.comment_id && (
+                  <form onSubmit={(event) => submitComment(event, comment.comment_id)} className="flex gap-2 mt-3">
+                    <input autoFocus value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder={`Reply to ${comment.author}...`} className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
+                    <button type="submit" disabled={isSubmittingReply} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-3 py-2 text-xs font-extrabold disabled:opacity-50">{isSubmittingReply ? '...' : 'Reply'}</button>
+                    <button type="button" onClick={() => setReplyingTo(null)} className="text-xs font-bold text-[#3B3633]/50">Cancel</button>
+                  </form>
+                )}
               </div>
             )) : <p className="text-sm text-[#3B3633]/50 font-bold">No comments yet.</p>}
           </div>

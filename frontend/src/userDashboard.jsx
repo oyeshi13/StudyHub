@@ -15,6 +15,12 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(commentsCount || 0);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const sendVoteRequest = async (type) => {
     const token = localStorage.getItem('token');
@@ -96,16 +102,18 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
     if (nextOpen) loadComments();
   };
 
-  const submitComment = async (event) => {
+  const submitComment = async (event, parentCommentId = null) => {
     event.preventDefault();
     const token = localStorage.getItem('token');
     if (!token) {
       alert("Please log in to comment!");
       return;
     }
-    if (!commentText.trim()) return;
+    const text = parentCommentId ? replyText : commentText;
+    if (!text.trim()) return;
 
-    setIsSubmittingComment(true);
+    if (parentCommentId) setIsSubmittingReply(true);
+    else setIsSubmittingComment(true);
     try {
       const response = await fetch(`http://localhost:5000/api/comments/${postId}`, {
         method: 'POST',
@@ -113,19 +121,54 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ commentText })
+        body: JSON.stringify({ commentText: text, parentCommentId })
       });
 
       if (response.ok) {
         const newComment = await response.json();
         setComments((current) => [...current, newComment]);
         setCommentCount((count) => count + 1);
-        setCommentText('');
+        if (parentCommentId) {
+          setReplyText('');
+          setReplyingTo(null);
+        } else {
+          setCommentText('');
+        }
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Could not post comment.');
       }
     } catch (error) {
       console.error("Comment failed:", error);
     } finally {
       setIsSubmittingComment(false);
+      setIsSubmittingReply(false);
+    }
+  };
+
+  const submitReport = async (event) => {
+    event.preventDefault();
+    if (!reportTarget || !reportReason.trim()) return;
+
+    setIsSubmittingReport(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/reports/${reportTarget.type}/${reportTarget.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reportReason.trim() })
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not submit report.');
+      setReportTarget(null);
+      setReportReason('');
+      alert('Report submitted for admin review.');
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
@@ -159,7 +202,7 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
           </button>
           {showOptions && (
             <div className="absolute right-0 mt-2 w-40 bg-[#FAF7F2] border border-[#EBDDD0] rounded-2xl shadow-lg z-10 overflow-hidden py-1">
-              <button className="w-full text-left px-4 py-2.5 text-sm font-extrabold text-[#F4B7CC] hover:bg-[#EBDDD0]/50 flex items-center transition-colors">
+              <button onClick={() => { setShowOptions(false); setReportTarget({ type: 'resource', id: postId, title }); }} className="w-full text-left px-4 py-2.5 text-sm font-extrabold text-[#F4B7CC] hover:bg-[#EBDDD0]/50 flex items-center transition-colors">
                 <span className="mr-2">🚩</span> Report Post
               </button>
             </div>
@@ -231,15 +274,44 @@ const Post = ({ postId, author, group, time, title, content, initialVotes, tags,
         <div className="mt-4 pt-4 border-t border-[#EBDDD0]">
           <div className="space-y-3 mb-4">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2">
-                <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
-                <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+              <div key={comment.comment_id} className={`bg-white/70 rounded-xl px-3 py-2 ${comment.parent_comment_id ? 'ml-6 border-l-2 border-[#B3CFF3]' : ''}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
+                    <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-3">
+                    <button type="button" onClick={() => { setReplyingTo(comment.comment_id); setReplyText(''); }} className="text-xs font-bold text-[#3B3633]/50 hover:text-[#3B3633]">Reply</button>
+                    <button type="button" onClick={() => setReportTarget({ type: 'comment', id: comment.comment_id, title: comment.comment_text })} className="text-xs font-bold text-red-500/70 hover:text-red-600">Report</button>
+                  </div>
+                </div>
+                {replyingTo === comment.comment_id && (
+                  <form onSubmit={(event) => submitComment(event, comment.comment_id)} className="flex gap-2 mt-3">
+                    <input autoFocus value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder={`Reply to ${comment.author}...`} className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
+                    <button type="submit" disabled={isSubmittingReply} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-3 py-2 text-xs font-extrabold disabled:opacity-50">{isSubmittingReply ? '...' : 'Reply'}</button>
+                    <button type="button" onClick={() => setReplyingTo(null)} className="text-xs font-bold text-[#3B3633]/50">Cancel</button>
+                  </form>
+                )}
               </div>
             )) : <p className="text-sm text-[#3B3633]/50 font-bold">No comments yet.</p>}
           </div>
           <form onSubmit={submitComment} className="flex gap-2">
             <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment..." className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
             <button type="submit" disabled={isSubmittingComment} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50">{isSubmittingComment ? '...' : 'Post'}</button>
+          </form>
+        </div>
+      )}
+
+      {reportTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={submitReport} className="w-full max-w-sm rounded-2xl border border-[#EBDDD0] bg-[#FAF7F2] p-6 shadow-2xl">
+            <h3 className="mb-1 text-lg font-extrabold text-[#3B3633]">Report {reportTarget.type === 'resource' ? 'post' : 'comment'}</h3>
+            {reportTarget.title && <p className="mb-3 truncate text-xs font-bold text-[#3B3633]/60">{reportTarget.title}</p>}
+            <textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Why should this be reviewed?" rows={3} required className="mb-4 w-full resize-none rounded-xl border border-[#EBDDD0] bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => { setReportTarget(null); setReportReason(''); }} className="rounded-xl border border-[#EBDDD0] px-4 py-2 text-xs font-extrabold">Cancel</button>
+              <button type="submit" disabled={isSubmittingReport} className="rounded-xl bg-red-600 px-4 py-2 text-xs font-extrabold text-white disabled:opacity-50">{isSubmittingReport ? 'Submitting...' : 'Submit report'}</button>
+            </div>
           </form>
         </div>
       )}

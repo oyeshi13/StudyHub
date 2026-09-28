@@ -46,6 +46,23 @@ try {
   );
   const resourceId = resource.rows[0].resource_id;
 
+  const parentComment = await client.query(
+    `INSERT INTO RESOURCE_COMMENTS (comment_text, resource_id, author)
+     VALUES ('Checklist parent comment', $1, $2)
+     RETURNING comment_id`,
+    [resourceId, studentId]
+  );
+  const reply = await client.query(
+    `INSERT INTO RESOURCE_COMMENTS (comment_text, resource_id, parent_comment_id, author)
+     SELECT 'Checklist reply', $1, $2, $3
+     WHERE EXISTS (
+       SELECT 1 FROM RESOURCE_COMMENTS WHERE comment_id = $2 AND resource_id = $1
+     )
+     RETURNING parent_comment_id`,
+    [resourceId, parentComment.rows[0].comment_id, studentId]
+  );
+  assert.equal(reply.rows[0].parent_comment_id, parentComment.rows[0].comment_id, "a reply should reference its parent comment");
+
   await client.query(
     "INSERT INTO VOTES (student_id, resource_id, vote_type) VALUES ($1, $2, 'UP')",
     [studentId, resourceId]

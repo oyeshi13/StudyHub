@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS RESOURCE_COMMENTS (
     comment_id SERIAL PRIMARY KEY,
     comment_text VARCHAR(400),
     resource_id INTEGER REFERENCES Resources(resource_id) ON DELETE CASCADE,
+    parent_comment_id INTEGER REFERENCES RESOURCE_COMMENTS(comment_id) ON DELETE CASCADE,
     author INTEGER REFERENCES Student(student_id),
     commented_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
