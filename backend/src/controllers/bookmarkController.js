@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import { withTransaction } from "../utils/withTransaction.js";
 
-// ১. বুকমার্ক টগল (না থাকলে অ্যাড করবে, থাকলে ডিলিট করবে)
+// bookmark toggle
 export const toggleBookmark = async (req, res) => {
   const studentId = req.user.student_id;
   const { resourceId } = req.params;
@@ -30,7 +30,7 @@ export const toggleBookmark = async (req, res) => {
   }
 };
 
-// ২. ইউজারের সমস্ত বুকমার্ক করা পোস্ট ফেচ করা
+// fetching mookmarked post
 export const getBookmarkedPosts = async (req, res) => {
   const studentId = req.user.student_id;
 

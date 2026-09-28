@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { apiFetch as fetch } from './services/api.js';
 
-const CoursePost = ({ postId, author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl }) => {
+const CoursePost = ({ postId, author, course, title, time, content, initialVotes, tags, commentsCount, fileUrl, onReportPost }) => {
   const [votes, setVotes] = useState(initialVotes || 0);
   const [voteStatus, setVoteStatus] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -11,8 +11,13 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(commentsCount || 0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Send vote request to backend
+  // Comment Reporting State
+  const [reportingCommentId, setReportingCommentId] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
   const sendVoteRequest = async (type) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -42,13 +47,8 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
     }
   };
 
-  const handleUpvote = () => {
-    sendVoteRequest('UP');
-  };
-
-  const handleDownvote = () => {
-    sendVoteRequest('DOWN');
-  };
+  const handleUpvote = () => sendVoteRequest('UP');
+  const handleDownvote = () => sendVoteRequest('DOWN');
 
   const handleBookmarkToggle = async () => {
     const token = localStorage.getItem('token');
@@ -120,6 +120,45 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
     }
   };
 
+  const handleReportCommentSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to report a comment!");
+      return;
+    }
+    if (!reportReason.trim()) {
+      alert("Please enter a reason.");
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/comment/${reportingCommentId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: reportReason })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Comment report submitted successfully.");
+        setReportingCommentId(null);
+        setReportReason('');
+      } else {
+        alert(data.error || "Failed to submit report.");
+      }
+    } catch (err) {
+      console.error("Report submit error:", err);
+      alert("Error submitting report.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   return (
     <div className="bg-[#FAF7F2] rounded-[2rem] shadow-sm border border-[#EBDDD0] p-6 mb-6">
       <div className="flex justify-between items-start mb-5">
@@ -141,9 +180,29 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
           </div>
         </div>
         
-        <button className="text-[#3B3633]/40 hover:text-[#3B3633] p-1.5 rounded-xl hover:bg-[#EBDDD0]/50 transition-colors">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
-        </button>
+        {/* Post Options Menu */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="text-[#3B3633]/40 hover:text-[#3B3633] p-1.5 rounded-xl hover:bg-[#EBDDD0]/50 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-36 bg-[#FAF7F2] border border-[#EBDDD0] rounded-xl shadow-lg py-1 z-20">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onReportPost(postId, title);
+                }}
+                className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <span>🚩</span> Report Post
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mb-5">
@@ -201,16 +260,76 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
         <div className="mt-4 pt-4 border-t border-[#EBDDD0]">
           <div className="space-y-3 mb-4">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2">
-                <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
-                <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+              <div key={comment.comment_id} className="bg-white/70 rounded-xl px-3 py-2.5 flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-extrabold text-[#3B3633]">{comment.author}</p>
+                  <p className="text-sm text-[#3B3633]/80 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+                </div>
+                <button
+                  onClick={() => setReportingCommentId(comment.comment_id)}
+                  className="text-xs font-bold text-[#3B3633]/40 hover:text-red-500 transition-colors p-1"
+                  title="Report inappropriate comment"
+                >
+                  🚩 Report
+                </button>
               </div>
             )) : <p className="text-sm text-[#3B3633]/50 font-bold">No comments yet.</p>}
           </div>
+
           <form onSubmit={submitComment} className="flex gap-2">
-            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment..." className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" />
-            <button type="submit" disabled={isSubmittingComment} className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50">{isSubmittingComment ? '...' : 'Post'}</button>
+            <input 
+              value={commentText} 
+              onChange={(event) => setCommentText(event.target.value)} 
+              placeholder="Write a comment..." 
+              className="flex-1 bg-white border border-[#EBDDD0] rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#D1BCFA]/50" 
+            />
+            <button 
+              type="submit" 
+              disabled={isSubmittingComment} 
+              className="bg-[#262423] text-[#FAF7F2] rounded-xl px-4 py-2 text-sm font-extrabold disabled:opacity-50"
+            >
+              {isSubmittingComment ? '...' : 'Post'}
+            </button>
           </form>
+        </div>
+      )}
+
+      {/* REPORT COMMENT MODAL */}
+      {reportingCommentId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FAF7F2] border border-[#EBDDD0] rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <h3 className="font-extrabold text-[#3B3633] text-lg mb-2">Report Inappropriate Comment</h3>
+            <p className="text-xs text-[#3B3633]/70 font-semibold mb-4">Please provide a brief reason why this comment violates guidelines:</p>
+            <form onSubmit={handleReportCommentSubmit}>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="e.g. Spam, offensive language, harassment..."
+                rows="3"
+                className="w-full bg-white border border-[#EBDDD0] rounded-xl p-3 text-sm font-medium text-[#3B3633] focus:outline-none focus:ring-2 focus:ring-red-400 mb-4 resize-none"
+                required
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportingCommentId(null);
+                    setReportReason('');
+                  }}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl border border-[#EBDDD0] text-[#3B3633] hover:bg-[#EBDDD0]/50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReport}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
@@ -220,7 +339,7 @@ const CoursePost = ({ postId, author, course, title, time, content, initialVotes
 export default function GroupPage() {
   const { departmentId } = useParams();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
 
   const [activeCourse, setActiveCourse] = useState('All Courses');
   const [searchQuery, setSearchQuery] = useState('');
@@ -233,6 +352,11 @@ export default function GroupPage() {
 
   const [department, setDepartment] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Resource Reporting State
+  const [reportingResource, setReportingResource] = useState(null);
+  const [resourceReportReason, setResourceReportReason] = useState('');
+  const [isSubmittingResourceReport, setIsSubmittingResourceReport] = useState(false);
 
   useEffect(() => {
     const fetchDept = async () => {
@@ -342,6 +466,49 @@ export default function GroupPage() {
     }
   };
 
+  const handleOpenReportPost = (postId, postTitle) => {
+    setReportingResource({ id: postId, title: postTitle });
+  };
+
+  const handleReportResourceSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to report a post!");
+      return;
+    }
+    if (!resourceReportReason.trim()) {
+      alert("Please enter a reason.");
+      return;
+    }
+
+    setIsSubmittingResourceReport(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports/resource/${reportingResource.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: resourceReportReason })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Post reported successfully.");
+        setReportingResource(null);
+        setResourceReportReason('');
+      } else {
+        alert(data.error || "Failed to report post.");
+      }
+    } catch (err) {
+      console.error("Report post error:", err);
+      alert("Error submitting report.");
+    } finally {
+      setIsSubmittingResourceReport(false);
+    }
+  };
+
   let displayPosts = Array.isArray(posts) ? [...posts] : [];
 
   if (activeCourse !== 'All Courses') {
@@ -377,7 +544,7 @@ export default function GroupPage() {
     <div className="min-h-screen bg-[#EBDDD0] font-sans text-[#3B3633]">
       <nav className="sticky top-0 z-40 bg-[#FAF7F2] border-b border-[#EBDDD0] px-6 h-20 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
-          <button onClick={() => setIsMenuOpen(true)} className="p-2.5 rounded-xl text-[#3B3633]/70 hover:bg-[#EBDDD0]/50 transition-colors">
+          <button onClick={() => setIsNavMenuOpen(true)} className="p-2.5 rounded-xl text-[#3B3633]/70 hover:bg-[#EBDDD0]/50 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <div className="text-xl font-extrabold text-[#3B3633] tracking-tight hidden sm:block">StudyHub</div>
@@ -387,11 +554,11 @@ export default function GroupPage() {
         </div>
       </nav>
 
-      {isMenuOpen && <div className="fixed inset-0 bg-[#3B3633]/10 z-40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-[#FAF7F2] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {isNavMenuOpen && <div className="fixed inset-0 bg-[#3B3633]/10 z-40 backdrop-blur-sm" onClick={() => setIsNavMenuOpen(false)}></div>}
+      <div className={`fixed top-0 left-0 h-full w-72 bg-[#FAF7F2] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isNavMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-[#EBDDD0] flex items-center justify-between">
           <span className="text-xl font-extrabold text-[#3B3633] tracking-tight">StudyHub</span>
-          <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-xl text-[#3B3633]/50 hover:bg-[#EBDDD0]/50 transition-colors">
+          <button onClick={() => setIsNavMenuOpen(false)} className="p-2 rounded-xl text-[#3B3633]/50 hover:bg-[#EBDDD0]/50 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -581,6 +748,7 @@ export default function GroupPage() {
                 initialVotes={post.initialVotes || 0}
                 commentsCount={post.commentsCount || 0}
                 tags={post.tags}
+                onReportPost={handleOpenReportPost}
               />
             </div>
           )) : (
@@ -592,6 +760,46 @@ export default function GroupPage() {
           )}
         </div>
       </main>
+
+      {/* REPORT POST / RESOURCE MODAL */}
+      {reportingResource && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FAF7F2] border border-[#EBDDD0] rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <h3 className="font-extrabold text-[#3B3633] text-lg mb-1">Report Post</h3>
+            <p className="text-xs text-[#3B3633]/60 font-bold mb-3 truncate">"{reportingResource.title}"</p>
+            <p className="text-xs text-[#3B3633]/70 font-semibold mb-4">Please specify why this post should be reviewed by an admin:</p>
+            <form onSubmit={handleReportResourceSubmit}>
+              <textarea
+                value={resourceReportReason}
+                onChange={(e) => setResourceReportReason(e.target.value)}
+                placeholder="e.g. Inappropriate content, copyright violation, spam..."
+                rows="3"
+                className="w-full bg-white border border-[#EBDDD0] rounded-xl p-3 text-sm font-medium text-[#3B3633] focus:outline-none focus:ring-2 focus:ring-red-400 mb-4 resize-none"
+                required
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportingResource(null);
+                    setResourceReportReason('');
+                  }}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl border border-[#EBDDD0] text-[#3B3633] hover:bg-[#EBDDD0]/50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingResourceReport}
+                  className="px-4 py-2 text-xs font-extrabold rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isSubmittingResourceReport ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// ফোল্ডার না থাকলে স্বয়ংক্রিয়ভাবে তৈরি হবে
+
 const uploadDir = "uploads/";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
