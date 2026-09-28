@@ -1,11 +1,12 @@
 import pool from "../config/db.js";
 
 const postDoubt = async (req, res) => {
-    const { course_code, title, description, author } = req.body;
+    const { course_code, title, description } = req.body;
+    const author = req.user.student_id;
     const files = req.files ?? [];
 
-    if (!course_code || !title?.trim() || !description?.trim() || !Number.isInteger(Number(author))) {
-        return res.status(400).json({ message: "Course, title, description, and author are required." });
+    if (!course_code || !title?.trim() || !description?.trim() || !Number.isInteger(author)) {
+        return res.status(400).json({ message: "Course, title, and description are required." });
     }
 
     let client;

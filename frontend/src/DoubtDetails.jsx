@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { apiFetch as fetch } from './services/api.js';
 
 const API_URL = 'http://localhost:5000';
 

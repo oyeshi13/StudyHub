@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiFetch as fetch } from './services/api.js';
 
 // ==========================================
 // 1. REUSABLE POST COMPONENT
