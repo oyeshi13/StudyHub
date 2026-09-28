@@ -80,7 +80,7 @@ const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // 1. Admin check (Plain-text comparison)
+        // 1. Admin check 
         const adminResult = await pool.query(
             "SELECT * FROM Admin WHERE LOWER(email) = $1", 
             [cleanEmail]
@@ -101,7 +101,7 @@ const login = async (req, res) => {
                     role: "admin", 
                     email: admin.email 
                 },
-                process.env.JWT_SECRET || "studyhub_super_secret_jwt_key_2026",
+                process.env.JWT_SECRET, // changed
                 { expiresIn: "1d" }
             );
 
@@ -145,7 +145,7 @@ const login = async (req, res) => {
                     role: "student", 
                     email: student.email 
                 },
-                process.env.JWT_SECRET || "studyhub_super_secret_jwt_key_2026",
+                process.env.JWT_SECRET, // changed
                 { expiresIn: "1d" }
             );
 

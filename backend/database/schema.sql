@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS Student (
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     department VARCHAR(50) NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
     reputation_points INT DEFAULT 0
 );
 
