@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 
-const user = JSON.parse(localStorage.getItem('user'));
+const API_URL = 'http://localhost:5000';
 
 export default function Doubts() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,17 +28,20 @@ export default function Doubts() {
   // Fetch Data on Load or Filter Change
   useEffect(() => {
     const loadCourses = async () => {
+      if (!user?.student_id) {
+        setError('Please log in to view doubts.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        //const [fetchedCourses, fetchedDoubts]
-        const response = await fetch(`http://localhost:5000/doubts/courses/${user.student_id}`)
+        const response = await fetch(`${API_URL}/doubts/courses/${user.student_id}`);
         const fetchedCourses = await response.json();
-        console.log(fetchedCourses)
+        if (!response.ok) throw new Error(fetchedCourses.message || 'Failed to load courses.');
         setCourses(fetchedCourses);
-        setError(null);
-      } catch (err) {
+      } catch {
         setError("Failed to load courses. Please try again.");
-        console.log(err);
       } finally {
         setLoading(false);
       }
@@ -46,18 +50,21 @@ export default function Doubts() {
     // Adding slight debounce for search
     const timer = setTimeout(() => loadCourses(), 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCourseId, sortBy]);
+  }, [user?.student_id]);
 
 
   useEffect(() => {
     const loadDoubts = async () => {
+      if (!user?.student_id) return;
+
       try {
         setLoading(true);
-        const response =  await fetch(`http://localhost:5000/doubts/courses/getDoubts/${user.student_id}`)
+        const response = await fetch(`${API_URL}/doubts/courses/getDoubts/${user.student_id}`);
         const fetchedDoubts = await response.json();
+        if (!response.ok) throw new Error(fetchedDoubts.message || 'Failed to load doubts.');
         setDoubts(fetchedDoubts);
-        setError(null)
-      } catch (err) {
+        setError(null);
+      } catch {
         setError("Failed to load doubts. Please try again.");
       } finally {
         setLoading(false);
@@ -67,7 +74,7 @@ export default function Doubts() {
     // Adding slight debounce for search
     const timer = setTimeout(() => loadDoubts(), 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCourseId, sortBy]);
+  }, [user?.student_id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
